@@ -8,6 +8,8 @@ class FormulaireConnexion extends StatelessWidget {
   final String selectedCountryCode;
   final Function(String?) onCountryCodeChanged;
   final Future<void> Function() onButtonPressed;
+  final String? phoneError;
+  final String? otpError;
 
   const FormulaireConnexion({
     super.key,
@@ -17,6 +19,8 @@ class FormulaireConnexion extends StatelessWidget {
     required this.selectedCountryCode,
     required this.onCountryCodeChanged,
     required this.onButtonPressed,
+    this.phoneError,
+    this.otpError,
   });
 
   @override
@@ -61,12 +65,13 @@ class FormulaireConnexion extends StatelessWidget {
                       fontSize: 24,
                       letterSpacing: 8,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: '000000',
                       fillColor: Colors.white,
                       filled: true,
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                       counterText: '',
+                      errorText: otpError,
                     ),
                   )
                 : Row(
@@ -97,11 +102,12 @@ class FormulaireConnexion extends StatelessWidget {
                       Expanded(
                         child: TextField(
                           controller: phoneController,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Numéro de téléphone',
                             fillColor: Colors.white,
                             filled: true,
-                            border: OutlineInputBorder(),
+                            border: const OutlineInputBorder(),
+                            errorText: phoneError,
                           ),
                           keyboardType: TextInputType.phone,
                         ),
