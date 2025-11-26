@@ -34,7 +34,7 @@ void main() async {
         Provider.value(value: container.userService),
         Provider.value(value: container.adminService),
         Provider.value(value: container.authService),
-        Provider.value(value: container.loginService),
+        ChangeNotifierProvider.value(value: container.loginService),
 
         // 👉 Providers pour gérer l'état côté UI
         ChangeNotifierProvider(create: (_) => AuthProvider()),
