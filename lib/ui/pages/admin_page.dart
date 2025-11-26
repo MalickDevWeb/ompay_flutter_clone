@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_flutter/ui/widgets/admin/entete_admin.dart';
 import 'package:test_flutter/services/communication/dio_client.dart';
 import 'package:test_flutter/ui/widgets/admin/onglet_approbations_admin.dart';
@@ -78,6 +79,7 @@ class _AdminPageState extends State<AdminPage>
       drawer: TiroirAdmin(
         isDarkMode: _isDarkMode,
         onToggleDarkMode: () => setState(() => _isDarkMode = !_isDarkMode),
+        onLogout: _onLogout,
       ),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
@@ -202,5 +204,10 @@ class _AdminPageState extends State<AdminPage>
         backgroundColor: Color(0xFFFF7900),
       ),
     );
+  }
+
+  void _onLogout() {
+    // Naviguer vers la page de connexion
+    context.go('/login');
   }
 }

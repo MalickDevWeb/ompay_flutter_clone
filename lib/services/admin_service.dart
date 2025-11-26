@@ -1,23 +1,31 @@
 import '../core/abstracts/api_client.dart';
 import '../core/abstracts/i_admin_service.dart';
 import '../core/models/api_result.dart';
-import '../models/pending_users_response.dart';
-import '../models/pending_balance_requests_response.dart';
-import '../models/admin_actions_response.dart';
-import '../models/update_transfer_rights_request.dart';
-import '../models/update_transfer_rights_response.dart';
-import '../models/daily_statistics_response.dart';
-import '../models/global_fees_request.dart';
-import '../models/global_fees_response.dart';
-import '../models/create_user_account_request.dart';
-import '../models/create_user_account_response.dart';
-import '../models/admin_user_action_request.dart';
-import '../models/admin_user_action_response.dart';
-import '../models/admin_balance_request_action_request.dart';
-import '../models/admin_virtual_purchase_request.dart';
-import '../models/admin_virtual_purchase_transaction_request.dart';
-import '../models/transaction_model.dart';
-import '../models/admin_accounts_response.dart';
+import '../models/responses/pending_users_response.dart';
+import '../models/responses/pending_balance_requests_response.dart';
+import '../models/responses/admin_actions_response.dart';
+import '../models/requests/update_transfer_rights_request.dart';
+import '../models/responses/update_transfer_rights_response.dart';
+import '../models/responses/daily_statistics_response.dart';
+import '../models/requests/global_fees_request.dart';
+import '../models/responses/global_fees_response.dart';
+import '../models/requests/create_user_account_request.dart';
+import '../models/responses/create_user_account_response.dart';
+import '../models/requests/admin_user_action_request.dart';
+import '../models/responses/admin_user_action_response.dart';
+import '../models/requests/admin_balance_request_action_request.dart';
+import '../models/requests/admin_virtual_purchase_request.dart';
+import '../models/requests/admin_virtual_purchase_transaction_request.dart';
+import '../models/entities/transaction_model.dart';
+import '../models/responses/admin_accounts_response.dart';
+import '../models/entities/compte_model.dart';
+import '../models/entities/user_model.dart';
+import '../models/responses/paginated_response.dart';
+import '../models/requests/create_user_request.dart';
+import '../models/requests/update_user_request.dart';
+import '../models/requests/create_account_request.dart';
+import '../models/responses/create_account_response.dart';
+import '../models/requests/update_account_request.dart';
 
 class AdminService implements IAdminService {
   final ApiClient api;
@@ -214,34 +222,35 @@ class AdminService implements IAdminService {
   }
 
   @override
-  Future<ApiResult<AdminAccountsResponse>> getAllAccounts({
-    String? statut,
-    String? numeroCompte,
-    String? titulaire,
-    String? search,
+  Future<ApiResult<PaginatedResponse<CompteModel>>> getAllAccounts({
+    int? page,
+    int? limit,
     String? sortBy,
-    String? sortDirection,
-    int? perPage,
+    String? order,
+    int? utilisateurId,
+    String? type,
   }) async {
     final queryParams = <String, String>{};
 
-    if (statut != null) queryParams['statut'] = statut;
-    if (numeroCompte != null) queryParams['numero_compte'] = numeroCompte;
-    if (titulaire != null) queryParams['titulaire'] = titulaire;
-    if (search != null) queryParams['search'] = search;
+    if (page != null) queryParams['page'] = page.toString();
+    if (limit != null) queryParams['limit'] = limit.toString();
     if (sortBy != null) queryParams['sort_by'] = sortBy;
-    if (sortDirection != null) queryParams['sort_direction'] = sortDirection;
-    if (perPage != null) queryParams['per_page'] = perPage.toString();
+    if (order != null) queryParams['order'] = order;
+    if (utilisateurId != null) queryParams['utilisateur_id'] = utilisateurId.toString();
+    if (type != null) queryParams['type'] = type;
 
     final queryString = queryParams.isNotEmpty
         ? '?${queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}'
         : '';
 
-    final result = await api.get('/admin/comptes$queryString');
+    final result = await api.get('/api/comptes$queryString');
 
     if (result.isSuccess && result.data != null) {
       try {
-        final response = AdminAccountsResponse.fromJson(result.data!);
+        final response = PaginatedResponse.fromJson(
+          result.data!,
+          (json) => CompteModel.fromJson(json),
+        );
         return ApiResult.success(response);
       } catch (e) {
         return ApiResult.failure("Invalid JSON response from get all accounts API: $e");
@@ -304,5 +313,251 @@ class AdminService implements IAdminService {
     }
 
     return ApiResult.failure(result.error ?? "Failed to purchase virtual money transaction");
+  }
+
+  @override
+  Future<ApiResult<PaginatedResponse<UserModel>>> getAllUsers({
+    int? page,
+    int? limit,
+    String? sortBy,
+    String? order,
+    String? type,
+  }) async {
+    final queryParams = <String, String>{};
+
+    if (page != null) queryParams['page'] = page.toString();
+    if (limit != null) queryParams['limit'] = limit.toString();
+    if (sortBy != null) queryParams['sort_by'] = sortBy;
+    if (order != null) queryParams['order'] = order;
+    if (type != null) queryParams['type'] = type;
+
+    final queryString = queryParams.isNotEmpty
+        ? '?${queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}'
+        : '';
+
+    final result = await api.get('/api/utilisateurs$queryString');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = PaginatedResponse.fromJson(
+          result.data!,
+          (json) => UserModel.fromJson(json),
+        );
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get all users API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get all users");
+  }
+
+  @override
+  Future<ApiResult<UserModel>> getUser(int userId) async {
+    final result = await api.get('/api/utilisateurs/$userId');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final user = UserModel.fromJson(result.data!['data']);
+        return ApiResult.success(user);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get user API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get user");
+  }
+
+  @override
+  Future<ApiResult<Map<String, dynamic>>> createUser(CreateUserRequest request) async {
+    final result = await api.post('/api/utilisateurs', request.toJson());
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to create user");
+  }
+
+  @override
+  Future<ApiResult<Map<String, dynamic>>> updateUser(int userId, UpdateUserRequest request) async {
+    final result = await api.put('/api/utilisateurs/$userId', request.toJson());
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to update user");
+  }
+
+  @override
+  Future<ApiResult<Map<String, dynamic>>> deleteUser(int userId) async {
+    final result = await api.delete('/api/utilisateurs/$userId');
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to delete user");
+  }
+
+  @override
+  Future<ApiResult<CompteModel>> getAccount(int accountId) async {
+    final result = await api.get('/api/comptes/$accountId');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final account = CompteModel.fromJson(result.data!['data']);
+        return ApiResult.success(account);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get account API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get account");
+  }
+
+  @override
+  Future<ApiResult<CreateAccountResponse>> createAccount(CreateAccountRequest request) async {
+    final result = await api.post('/api/comptes', request.toJson());
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = CreateAccountResponse.fromJson(result.data!);
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from create account API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to create account");
+  }
+
+  @override
+  Future<ApiResult<Map<String, dynamic>>> updateAccount(int accountId, UpdateAccountRequest request) async {
+    final result = await api.put('/api/comptes/$accountId', request.toJson());
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to update account");
+  }
+
+  @override
+  Future<ApiResult<Map<String, dynamic>>> deleteAccount(int accountId) async {
+    final result = await api.delete('/api/comptes/$accountId');
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to delete account");
+  }
+
+  @override
+  Future<ApiResult<PaginatedResponse<Map<String, dynamic>>>> getAccountTransactions(
+    int accountId, {
+    int? page,
+    int? limit,
+    String? sortBy,
+    String? order,
+    String? type,
+    String? statut,
+  }) async {
+    final queryParams = <String, String>{};
+    if (page != null) queryParams['page'] = page.toString();
+    if (limit != null) queryParams['limit'] = limit.toString();
+    if (sortBy != null) queryParams['sort_by'] = sortBy;
+    if (order != null) queryParams['order'] = order;
+    if (type != null) queryParams['type'] = type;
+    if (statut != null) queryParams['statut'] = statut;
+
+    final queryString = queryParams.isNotEmpty
+        ? '?${queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}'
+        : '';
+
+    final result = await api.get('/api/comptes/$accountId/transactions$queryString');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = PaginatedResponse.fromJson(
+          result.data!,
+          (json) => json as Map<String, dynamic>,
+        );
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get account transactions API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get account transactions");
+  }
+
+  // Admin stats endpoints
+  Future<ApiResult<Map<String, dynamic>>> getTotalBalance() async {
+    final result = await api.get('/api/stats/solde-total');
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get total balance");
+  }
+
+  Future<ApiResult<Map<String, dynamic>>> getTransactionStats() async {
+    final result = await api.get('/api/stats/transactions');
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get transaction stats");
+  }
+
+  Future<ApiResult<PaginatedResponse<UserModel>>> getMerchants() async {
+    final result = await api.get('/api/utilisateurs/commercants');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = PaginatedResponse.fromJson(
+          result.data!,
+          (json) => UserModel.fromJson(json),
+        );
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get merchants API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get merchants");
+  }
+
+  Future<ApiResult<PaginatedResponse<UserModel>>> getSuppliers() async {
+    final result = await api.get('/api/utilisateurs/fournisseurs');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = PaginatedResponse.fromJson(
+          result.data!,
+          (json) => UserModel.fromJson(json),
+        );
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get suppliers API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get suppliers");
+  }
+
+  Future<ApiResult<Map<String, dynamic>>> getUserStats(int userId) async {
+    final result = await api.get('/api/stats/utilisateur/$userId');
+
+    if (result.isSuccess && result.data != null) {
+      return ApiResult.success(result.data!);
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get user stats");
   }
 }

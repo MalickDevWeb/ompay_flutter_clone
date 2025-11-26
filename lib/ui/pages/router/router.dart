@@ -15,7 +15,7 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/client',
-      builder: (context, state) => const ClientPage(),
+      builder: (context, state) => const ClientPageWithQR(),
     ),
     GoRoute(
       path: '/admin',

@@ -45,6 +45,22 @@ dependencies:
   dio: ^5.4.0
   http: ^1.2.0
 
+  # QR Code scanning
+  mobile_scanner: ^5.2.3
+
+  # Secure storage
+  flutter_secure_storage: ^9.2.2
+
+  # Logging
+  logger: ^2.4.0
+
+  # Shared preferences
+  shared_preferences: ^2.2.3
+
+  # Localization
+  flutter_localizations:
+    sdk: flutter
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

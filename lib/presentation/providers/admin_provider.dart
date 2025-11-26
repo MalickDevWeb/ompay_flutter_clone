@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:test_flutter/core/abstracts/api_client.dart';
 import 'package:test_flutter/data/services/admin_service.dart';
-import 'package:test_flutter/models/pending_user.dart';
-import 'package:test_flutter/models/pending_balance_request.dart';
-import 'package:test_flutter/models/active_client.dart';
+import 'package:test_flutter/models/entities/pending_user.dart';
+import 'package:test_flutter/models/requests/pending_balance_request.dart';
+import 'package:test_flutter/models/entities/active_client.dart';
 
 class AdminProvider extends ChangeNotifier {
   final AdminService _adminService;

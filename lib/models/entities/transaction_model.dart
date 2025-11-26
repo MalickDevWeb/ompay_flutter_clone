@@ -1,0 +1,62 @@
+class TransactionModel {
+  final int? id;
+  final String type;
+  final double montant;
+  final String? compteEmetteur;
+  final String? compteRecepteur;
+  final DateTime dateTransaction;
+  final String statut;
+  final Map<String, dynamic>? links;
+
+  TransactionModel({
+    this.id,
+    required this.type,
+    required this.montant,
+    this.compteEmetteur,
+    this.compteRecepteur,
+    required this.dateTransaction,
+    required this.statut,
+    this.links,
+  });
+
+  factory TransactionModel.fromJson(Map<String, dynamic> json) {
+    DateTime? parsedDate;
+    try {
+      final dateString = json['date_transaction']?.toString();
+      if (dateString != null && dateString.isNotEmpty) {
+        parsedDate = DateTime.parse(dateString);
+      }
+    } catch (e) {
+      // If date parsing fails, use current time as fallback
+      parsedDate = DateTime.now();
+    }
+
+    return TransactionModel(
+      id: json['id'] as int?,
+      type: json['type']?.toString() ?? '',
+      montant: (json['montant'] as num?)?.toDouble() ?? 0.0,
+      compteEmetteur: json['compte_emetteur']?.toString(),
+      compteRecepteur: json['compte_recepteur']?.toString(),
+      dateTransaction: parsedDate ?? DateTime.now(),
+      statut: json['statut']?.toString() ?? '',
+      links: json['links'] as Map<String, dynamic>?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type,
+    'montant': montant,
+    'compte_emetteur': compteEmetteur,
+    'compte_recepteur': compteRecepteur,
+    'date_transaction': dateTransaction.toIso8601String(),
+    'statut': statut,
+    'links': links,
+  };
+
+  // Compatibility getter
+  String get reference => id?.toString() ?? '';
+
+  @override
+  String toString() => 'TransactionModel(id: $id, type: $type, montant: $montant, statut: $statut)';
+}

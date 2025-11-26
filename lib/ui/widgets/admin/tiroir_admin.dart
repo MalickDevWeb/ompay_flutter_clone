@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class TiroirAdmin extends StatelessWidget {
   final bool isDarkMode;
   final VoidCallback onToggleDarkMode;
+  final VoidCallback onLogout;
 
   const TiroirAdmin({
     super.key,
     required this.isDarkMode,
     required this.onToggleDarkMode,
+    required this.onLogout,
   });
 
   @override
@@ -69,7 +71,10 @@ class TiroirAdmin extends StatelessWidget {
                 color: isDarkMode ? Colors.white : Colors.black,
               ),
             ),
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              Navigator.pop(context);
+              onLogout();
+            },
           ),
         ],
       ),

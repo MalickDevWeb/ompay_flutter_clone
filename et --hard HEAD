@@ -1,0 +1,7 @@
+[33m0d1e51b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev/1.1.1[m[33m, [m[1;31morigin/dev/1.1.0[m[33m, [m[1;32mdev/1.1.0[m[33m)[m HEAD@{0}: reset: moving to HEAD
+[33m0d1e51b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev/1.1.1[m[33m, [m[1;31morigin/dev/1.1.0[m[33m, [m[1;32mdev/1.1.0[m[33m)[m HEAD@{1}: checkout: moving from dev/1.1.0 to dev/1.1.1
+[33m0d1e51b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev/1.1.1[m[33m, [m[1;31morigin/dev/1.1.0[m[33m, [m[1;32mdev/1.1.0[m[33m)[m HEAD@{2}: commit: code Otp bi bakh na mougui redirer affaire yi selon les type
+[33ma1bc967[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mprod[m[33m, [m[1;32mmain[m[33m, [m[1;32mdev/1.0.0[m[33m)[m HEAD@{3}: checkout: moving from dev/1.0.0 to dev/1.1.0
+[33ma1bc967[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mprod[m[33m, [m[1;32mmain[m[33m, [m[1;32mdev/1.0.0[m[33m)[m HEAD@{4}: checkout: moving from prod to dev/1.0.0
+[33ma1bc967[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mprod[m[33m, [m[1;32mmain[m[33m, [m[1;32mdev/1.0.0[m[33m)[m HEAD@{5}: checkout: moving from main to prod
+[33ma1bc967[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mprod[m[33m, [m[1;32mmain[m[33m, [m[1;32mdev/1.0.0[m[33m)[m HEAD@{6}: commit (initial): my first commit

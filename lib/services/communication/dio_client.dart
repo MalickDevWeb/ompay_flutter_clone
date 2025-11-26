@@ -20,7 +20,7 @@ class DioClient implements ApiClient {
 
     // Add token interceptor for authentication
     dio.interceptors.add(TokenInterceptor(
-      tokenProvider: () => (authService ?? AuthService()).accessToken,
+      tokenProvider: () => (authService ?? AuthService()).authorizationHeader,
     ));
   }
 

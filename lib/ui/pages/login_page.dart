@@ -1,14 +1,13 @@
 // Importer les packages nécessaires pour l'interface Flutter et les opérations asynchrones
 import 'package:flutter/material.dart';
-import 'package:test_flutter/ui/pages/client_page.dart';
-import 'package:test_flutter/ui/pages/admin_page.dart';
-import 'package:test_flutter/ui/pages/fournisseur_page.dart';
+import 'package:go_router/go_router.dart';
 import 'package:test_flutter/ui/widgets/login/carrousel_images.dart';
 import 'package:test_flutter/ui/widgets/login/formulaire_connexion.dart';
 // import 'package:test_flutter/ui/widgets/login/wavy_clipper.dart';
 import 'package:test_flutter/services/login_service.dart';
 import 'package:test_flutter/core/validators/login_validator.dart';
-// import 'package:provider/provider.dart';
+import 'package:test_flutter/models/entities/login_result.dart';
+import 'package:test_flutter/core/services/secure_storage_service.dart';
 
 // Widget principal de la page de connexion, stateful pour gérer le contenu dynamique
 class LoginPage extends StatefulWidget {
@@ -22,9 +21,6 @@ class LoginPage extends StatefulWidget {
 
 // Classe d'état pour LoginPage, gère l'état et le cycle de vie
 class _LoginPageState extends State<LoginPage> {
-  // Service pour la gestion de la connexion
-  late final LoginService _loginService;
-
   // Contrôleur pour la saisie du numéro de téléphone
   final TextEditingController _phoneController = TextEditingController();
   // Contrôleur pour la saisie du code de vérification
@@ -39,43 +35,17 @@ class _LoginPageState extends State<LoginPage> {
   String? _phoneError;
   String? _otpError;
 
-  // Constantes pour les messages d'erreur
-  static const String _otpSendErrorMessage = 'Erreur lors de l\'envoi de l\'OTP';
 
-  // Méthode pour vérifier si les credentials correspondent à un admin
-  // Amélioration: Extraire la logique de vérification admin pour meilleure maintenabilité
-  bool _isAdminCredentials(String phone, String code) {
-    // TODO: Remplacer par une vérification via service ou config
-    return phone == '770000000' && code == '111111';
-  }
 
   // Méthodes de navigation pour améliorer la lisibilité
   // Amélioration: Extraire la navigation pour séparer les préoccupations
-  void _navigateToAdmin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const AdminPage()),
-    );
-  }
-
-  void _navigateToClient() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ClientPage()),
-    );
-  }
-
-  void _navigateToFournisseur() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const FournisseurPage()),
-    );
+  void _navigateToRoute(String route) {
+    context.go(route);
   }
 
   @override
   void initState() {
     super.initState();
-    _loginService = widget.loginService;
     _phoneController.addListener(_clearPhoneError);
     _codeController.addListener(_clearOtpError);
   }
@@ -124,10 +94,12 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  /// Handles OTP verification process with improved error handling and separation of concerns
+  /// Handles OTP verification process with real API
   Future<void> _handleOtpVerification() async {
     // Input validation with trimmed text for better UX
+    final phone = _phoneController.text.trim();
     final otpCode = _codeController.text.trim();
+
     if (!LoginValidator.validateOtp(otpCode)) {
       _setOtpError(LoginValidator.getOtpErrorMessage());
       return;
@@ -137,52 +109,86 @@ class _LoginPageState extends State<LoginPage> {
     _clearErrorsAndStartLoading();
 
     try {
-      final result = await _loginService.loginWithOtp(_phoneController.text.trim(), otpCode);
+      // Call the real login service
+      final result = await widget.loginService.loginWithOtp(phone, otpCode);
 
       if (!mounted) return;
 
+      print('🔍 Login result: isSuccess=${result.isSuccess}, user=${result.user}, redirectRoute=${result.redirectRoute}');
+      if (result.user != null) {
+        print('👤 User details: id=${result.user!.id}, type=${result.user!.type}, nom=${result.user!.nom}');
+      }
+
       if (result.isSuccess && result.user != null) {
-        // Navigate based on user type with null safety
+        print('✅ Login successful, checking user type: ${result.user!.type}');
         await _navigateBasedOnUserType(result.user!.type);
       } else {
-        // Handle authentication failure with specific error message
-        final errorMessage = result.error ?? 'OTP verification failed. Please try again.';
-        _setOtpErrorAndStopLoading(errorMessage);
-      }
-    } on Exception catch (e) {
-      // Handle network or service-specific exceptions
-      if (mounted) {
-        final errorMessage = _getErrorMessageFromException(e);
-        _setOtpErrorAndStopLoading(errorMessage);
+        print('❌ Login failed: ${result.error}');
+        _setOtpErrorAndStopLoading(result.error ?? 'Code OTP invalide. Veuillez réessayer.');
       }
     } catch (e) {
-      // Handle unexpected errors with fallback message
-      if (mounted) {
-        _setOtpErrorAndStopLoading('An unexpected error occurred. Please try again.');
-      }
+      if (!mounted) return;
+      print('❌ Login error: $e');
+      _setOtpErrorAndStopLoading('Erreur de connexion. Veuillez réessayer.');
     }
   }
 
   /// Navigates to appropriate page based on user type
   Future<void> _navigateBasedOnUserType(String? userType) async {
-    if (userType == null) {
-      _navigateToClient(); // Default fallback
-      return;
+    // Log user type for debugging
+    print('🔄 User type received: $userType');
+
+    String route;
+    if (userType == null || userType.isEmpty) {
+      print('⚠️ User type is null or empty, checking secure storage as fallback');
+
+      // Fallback: check user type from secure storage
+      final storedUserType = await SecureStorageService.getUserType();
+      print('🔄 Fallback user type from storage: $storedUserType');
+
+      if (storedUserType != null && storedUserType.isNotEmpty) {
+        userType = storedUserType;
+      } else {
+        print('⚠️ No user type found in storage, defaulting to client');
+        route = '/client'; // Default fallback
+        print('🚀 Navigating to default route: $route');
+        _navigateToRoute(route);
+        return;
+      }
     }
 
-    switch (userType.toLowerCase()) {
+    final normalizedType = userType!.toLowerCase().trim();
+    print('🔄 Normalized user type: $normalizedType');
+
+    switch (normalizedType) {
       case 'admin':
-        _navigateToAdmin();
+      case 'administrator':
+      case 'superuser':
+        print('👑 Admin user detected, redirecting to admin page');
+        route = '/admin';
         break;
       case 'fournisseur':
-        _navigateToFournisseur();
+      case 'provider':
+      case 'supplier':
+        print('🏭 Fournisseur user detected, redirecting to fournisseur page');
+        route = '/fournisseur';
         break;
       case 'client':
       case 'commerçant':
+      case 'merchant':
+      case 'customer':
+      case 'user':
+        print('👤 Client user detected, redirecting to client page');
+        route = '/client';
+        break;
       default:
-        _navigateToClient();
+        print('❓ Unknown user type "$normalizedType", defaulting to client page');
+        route = '/client';
         break;
     }
+
+    print('🚀 Navigating to route: $route');
+    _navigateToRoute(route);
   }
 
   /// Clears all errors and starts loading state
@@ -209,12 +215,6 @@ class _LoginPageState extends State<LoginPage> {
     });
   }
 
-  /// Extracts user-friendly error message from exception
-  String _getErrorMessageFromException(Exception e) {
-    // Could be extended to handle specific exception types
-    return 'Connection error: ${e.toString().split(':').last.trim()}';
-  }
-
   // Gestion de la soumission du téléphone
   Future<void> _handlePhoneSubmission() async {
     // Validation du numéro de téléphone
@@ -235,44 +235,32 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // Utiliser le service pour envoyer l'OTP
-      final result = await _loginService.sendOtp(_phoneController.text);
+      // Call the real send OTP service
+      final result = await widget.loginService.sendOtp(_phoneController.text.trim());
 
       if (!mounted) return;
 
       if (result.isSuccess) {
+        print('✅ OTP sent successfully');
         // Succès : passer à l'étape du code
         setState(() {
           _isLoading = false;
           _isCodeStep = true;
         });
       } else {
-        // Échec : afficher le message d'erreur du service
+        print('❌ Failed to send OTP: ${result.error}');
         setState(() {
+          _phoneError = result.error ?? 'Erreur lors de l\'envoi de l\'OTP';
           _isLoading = false;
         });
-        _showErrorSnackBar(result.error ?? _otpSendErrorMessage);
       }
     } catch (e) {
-      // Gestion des erreurs inattendues
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showErrorSnackBar('$_otpSendErrorMessage: $e');
-      }
-    }
-  }
-
-  // Méthode utilitaire pour afficher les erreurs
-  void _showErrorSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (!mounted) return;
+      print('❌ Send OTP error: $e');
+      setState(() {
+        _phoneError = 'Erreur de connexion. Veuillez réessayer.';
+        _isLoading = false;
+      });
     }
   }
 

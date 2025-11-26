@@ -5,10 +5,10 @@ import 'package:test_flutter/core/abstracts/api_client.dart';
 import 'package:test_flutter/core/models/api_result.dart';
 import 'package:test_flutter/data/services/admin_service.dart';
 import 'package:test_flutter/data/mock/admin_mock_data.dart';
-import 'package:test_flutter/models/pending_user.dart';
-import 'package:test_flutter/models/pending_balance_request.dart';
-import 'package:test_flutter/models/active_client.dart';
-import 'package:test_flutter/models/user_model.dart';
+import 'package:test_flutter/models/entities/pending_user.dart';
+import 'package:test_flutter/models/requests/pending_balance_request.dart';
+import 'package:test_flutter/models/entities/active_client.dart';
+import 'package:test_flutter/models/entities/user_model.dart';
 
 @GenerateMocks([ApiClient])
 import 'admin_service_test.mocks.dart';

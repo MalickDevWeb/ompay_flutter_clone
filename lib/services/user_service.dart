@@ -1,38 +1,54 @@
 import '../core/abstracts/api_client.dart';
 import '../core/abstracts/i_user_service.dart';
 import '../core/models/api_result.dart';
-import '../models/balance_response.dart';
-import '../models/compte_model.dart';
-import '../models/create_account_request.dart';
-import '../models/delete_account_response.dart';
-import '../models/restore_account_response.dart';
-import '../models/switch_account_response.dart';
-import '../models/transaction_model.dart';
-import '../models/transaction_response.dart';
-import '../models/update_account_request.dart';
-import '../models/user_model.dart';
-import '../models/otp_confirmation_request.dart';
-import '../models/withdrawal_request.dart';
-import '../models/unified_transaction_request.dart';
-import '../models/admin_virtual_purchase_request.dart';
-import '../models/balance_request.dart';
-import '../models/balance_purchase_request.dart';
-import '../models/balance_purchase_response.dart';
-import '../models/client_deposit_request.dart';
-import '../models/deposit_request.dart';
-import '../models/withdrawal_confirmation_request.dart';
-import '../models/confirm_withdrawal_request.dart';
-import '../models/virtual_purchase_request.dart';
-import '../models/register_request.dart';
-import '../models/register_response.dart';
+import '../models/responses/balance_response.dart';
+import '../models/entities/compte_model.dart';
+import '../models/requests/create_account_request.dart';
+import '../models/responses/delete_account_response.dart';
+import '../models/responses/restore_account_response.dart';
+import '../models/responses/switch_account_response.dart';
+import '../models/entities/transaction_model.dart';
+import '../models/responses/transaction_response.dart';
+import '../models/requests/update_account_request.dart';
+import '../models/entities/user_model.dart';
+import '../models/requests/otp_confirmation_request.dart';
+import '../models/requests/withdrawal_request.dart';
+import '../models/requests/unified_transaction_request.dart';
+import '../models/requests/admin_virtual_purchase_request.dart';
+import '../models/requests/balance_request.dart';
+import '../models/requests/balance_purchase_request.dart';
+import '../models/responses/balance_purchase_response.dart';
+import '../models/requests/client_deposit_request.dart';
+import '../models/requests/deposit_request.dart';
+import '../models/requests/withdrawal_confirmation_request.dart';
+import '../models/requests/confirm_withdrawal_request.dart';
+import '../models/requests/virtual_purchase_request.dart';
+import '../models/requests/register_request.dart';
+import '../models/responses/register_response.dart';
+import '../models/requests/login_request.dart';
+import '../models/responses/login_response.dart';
+import '../models/responses/logout_response.dart';
+import '../models/responses/create_account_response.dart';
 
 class UserService implements IUserService {
   final ApiClient api;
 
   UserService(this.api);
 
-  Future<ApiResult<Map<String, dynamic>>> login(String email, String password) {
-    return api.post('/auth/login', {"email": email, "password": password});
+  @override
+  Future<ApiResult<LoginResponse>> login(LoginRequest request) async {
+    final result = await api.post('/api/auth/login', request.toJson());
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = LoginResponse.fromJson(result.data!);
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from login API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to login");
   }
 
   @override
@@ -83,30 +99,15 @@ class UserService implements IUserService {
     return ApiResult.failure(result.error ?? "Failed to update user profile");
   }
 
+
   @override
-  Future<ApiResult<StatusModel>> sendLogoutOtp() async {
-    final result = await api.get('/logout/otp');
+  Future<ApiResult<LogoutResponse>> logout() async {
+    final result = await api.post('/api/auth/logout', {});
 
     if (result.isSuccess && result.data != null) {
       try {
-        final status = StatusModel.fromJson(result.data!);
-        return ApiResult.success(status);
-      } catch (e) {
-        return ApiResult.failure("Invalid JSON response from send logout OTP API: $e");
-      }
-    }
-
-    return ApiResult.failure(result.error ?? "Failed to send logout OTP");
-  }
-
-  @override
-  Future<ApiResult<StatusModel>> logout(String otpCode) async {
-    final result = await api.post('/logout', {"otp_code": otpCode});
-
-    if (result.isSuccess && result.data != null) {
-      try {
-        final status = StatusModel.fromJson(result.data!);
-        return ApiResult.success(status);
+        final response = LogoutResponse.fromJson(result.data!);
+        return ApiResult.success(response);
       } catch (e) {
         return ApiResult.failure("Invalid JSON response from logout API: $e");
       }
@@ -167,7 +168,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<ComptesResponse>> getMyAccounts() async {
-    final result = await api.get('/comptes/mesComptes');
+    final result = await api.get('/api/comptes');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -183,7 +184,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<CreateAccountResponse>> createAccount(CreateAccountRequest request) async {
-    final result = await api.post('/compte/nouveaucompte', request.toJson());
+    final result = await api.post('/api/comptes', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -326,7 +327,7 @@ class UserService implements IUserService {
         ? '?${queryParams.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&')}'
         : '';
 
-    final result = await api.get('/transactions$queryString');
+    final result = await api.get('/api/transactions$queryString');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -342,7 +343,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> getTransaction(String transactionId) async {
-    final result = await api.get('/transactions/$transactionId');
+    final result = await api.get('/api/transactions/$transactionId');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -358,7 +359,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeWithdrawal(WithdrawalRequest request) async {
-    final result = await api.post('/transactions/retrait', request.toJson());
+    final result = await api.post('/api/transactions/paiement', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -374,7 +375,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeUnifiedTransaction(UnifiedTransactionRequest request) async {
-    final result = await api.post('/transactions/unified', request.toJson());
+    final result = await api.post('/api/transactions/transfert', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -422,7 +423,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeDeposit(DepositRequest request) async {
-    final result = await api.post('/transactions/depot', request.toJson());
+    final result = await api.post('/api/transactions/depot', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -438,7 +439,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeClientDeposit(ClientDepositRequest request) async {
-    final result = await api.post('/transactions/depot', request.toJson());
+    final result = await api.post('/api/transactions/depot', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -454,7 +455,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> confirmWithdrawal(ConfirmWithdrawalRequest request) async {
-    final result = await api.post('/transactions/confirm-retrait', request.toJson());
+    final result = await api.post('/api/transactions/confirm-retrait', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -470,7 +471,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> confirmWithdrawalWithCode(WithdrawalConfirmationRequest request) async {
-    final result = await api.post('/transactions/confirm-retrait', request.toJson());
+    final result = await api.post('/api/transactions/confirm-retrait', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -486,7 +487,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeVirtualPurchase(VirtualPurchaseRequest request) async {
-    final result = await api.post('/transactions/achat-virtuel', request.toJson());
+    final result = await api.post('/api/transactions/achat-virtuel', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -502,7 +503,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeAdminVirtualPurchase(AdminVirtualPurchaseRequest request) async {
-    final result = await api.post('/transactions/achat-virtuel', request.toJson());
+    final result = await api.post('/api/transactions/achat-virtuel', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {

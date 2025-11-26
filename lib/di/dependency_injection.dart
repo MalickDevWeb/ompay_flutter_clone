@@ -21,4 +21,9 @@ class AppContainer {
     adminService = AdminService(api);
     loginService = LoginService(userService, authService);
   }
+
+  /// Initialize services that need async setup
+  Future<void> initialize() async {
+    await authService.initialize();
+  }
 }

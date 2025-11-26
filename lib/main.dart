@@ -12,11 +12,17 @@ import 'package:test_flutter/presentation/providers/admin_provider.dart';
 import 'core/config/env_config.dart';
 
 void main() async {
+  // Ensure Flutter is initialized
+  WidgetsFlutterBinding.ensureInitialized();
+
   // Load environment configuration
   await EnvConfig.load();
 
   // 👉 initialise ton conteneur backend (Dio, services, API)
   final container = AppContainer(useDio: true);
+
+  // Initialize services that need async setup
+  await container.initialize();
 
   runApp(
     MultiProvider(
