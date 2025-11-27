@@ -85,7 +85,7 @@ class _ClientPageWithQRState extends State<ClientPageWithQR> {
                       onTabChanged: (value) => setState(() => _isPayerSelected = value),
                       numeroController: _numeroController,
                       montantController: _montantController,
-                      onValidate: () {},
+                      loginService: _loginService,
                     ),
 
                     HistoriqueTransactions(

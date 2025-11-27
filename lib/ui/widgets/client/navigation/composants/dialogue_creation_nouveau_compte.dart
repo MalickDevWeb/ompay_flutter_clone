@@ -116,7 +116,7 @@ class _DialogueCreationNouveauCompteState extends State<DialogueCreationNouveauC
                       }
 
                       final newAccount = AccountModel(
-                        id: DateTime.now().millisecondsSinceEpoch,
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
                         numeroCompte: 'CPT-${DateTime.now().millisecondsSinceEpoch}',
                         nomCompte: _nomController.text,
                         isActive: false,

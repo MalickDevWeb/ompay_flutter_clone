@@ -49,7 +49,7 @@ class EnteteTiroirSimple extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      user?.name ?? 'Utilisateur',//Nom du compte active
+                      activeAccount?.nomCompte ?? user?.nom ?? 'Utilisateur', // Nom du compte actif ou nom utilisateur
                       style: TextStyle(
                         color: AppColors.textPrimary(isDarkMode),
                         fontSize: 16,
@@ -59,7 +59,7 @@ class EnteteTiroirSimple extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      activeAccount?.numeroCompte ?? 'Chargement...',//Numéro du compte active
+                      activeAccount?.numeroCompte ?? 'Chargement...', // Numéro du compte actif
                       style: TextStyle(
                         color: AppColors.textSecondary(isDarkMode),
                         fontSize: 14,

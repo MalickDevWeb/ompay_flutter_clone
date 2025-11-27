@@ -410,7 +410,35 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> makeUnifiedTransaction(UnifiedTransactionRequest request) async {
-    final result = await api.post('/api/transactions/transfert', request.toJson());
+    final result = await api.post('/api/transactions/unified', request.toJson());
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final transaction = TransactionModel.fromJson(result.data!);
+        return ApiResult.success(transaction);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Unknown error");
+  }
+
+  @override
+  Future<ApiResult<TransactionModel>> makePayment({
+    required double montant,
+    String? codeMarchand,
+    String? telephoneMarchand,
+    String? note,
+  }) async {
+    final data = {
+      'montant': montant,
+      if (codeMarchand != null) 'code_marchand': codeMarchand,
+      if (telephoneMarchand != null) 'telephone_marchand': telephoneMarchand,
+      if (note != null) 'note': note,
+    };
+
+    final result = await api.post('/api/transactions/paiement', data);
 
     if (result.isSuccess && result.data != null) {
       try {

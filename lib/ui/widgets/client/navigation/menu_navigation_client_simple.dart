@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../../services/login_service.dart';
 import 'composants/entete_tiroir_simple.dart';
 import 'composants/interrupteur_theme_simple.dart';
 import 'composants/section_comptes_simple.dart';
@@ -28,41 +30,85 @@ class _MenuNavigationClientSimpleState extends State<MenuNavigationClientSimple>
   @override
   void initState() {
     super.initState();
-    accounts = [
-      AccountModel(
-        numeroCompte: 'CPT-5556', // nom du compte pas le account holder
-        nomCompte: 'Compte Epargne', // numéro compte pas le phone number
-        isActive: true,
-      ),
-      AccountModel(
-        numeroCompte: 'CPT-5557',
-        nomCompte: 'Compte Courant',
-        isActive: false,
-      ),
-    ];
+    // Initialize with empty list - will be populated from LoginService
+    accounts = [];
   }
 
-  void _handleAccountSelected(AccountModel account) {
-    if (!mounted) return;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Load accounts from LoginService when dependencies change
+    _loadAccountsFromLoginService();
+  }
+
+  void _loadAccountsFromLoginService() {
+    final loginService = Provider.of<LoginService>(context, listen: false);
+    final comptes = loginService.clientAccounts;
 
     setState(() {
-      for (var acc in accounts) {
-        acc.isActive = false;
-      }
-      account.isActive = true;
+      accounts = comptes.map((compte) => AccountModel(
+        id: compte.id,
+        numeroCompte: compte.numeroCompte,
+        nomCompte: compte.nomCompte ?? 'Compte ${compte.numeroCompte}',
+        isActive: compte.statut.toLowerCase() == 'actif',
+      )).toList();
     });
+  }
 
-    // Afficher le SnackBar de manière sécurisée
-    Future.delayed(Duration.zero, () {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Compte changé: ${account.nomCompte}'),
-            backgroundColor: AppColors.primary,
-          ),
-        );
+  Future<void> _handleAccountSelected(AccountModel account) async {
+    try {
+      final loginService = Provider.of<LoginService>(context, listen: false);
+
+      // Call API to switch account
+      final result = await loginService.userService.switchActiveAccount(account.numeroCompte);
+
+      if (result.isSuccess) {
+        // Update local state
+        setState(() {
+          for (var acc in accounts) {
+            acc.isActive = false;
+          }
+          account.isActive = true;
+        });
+
+        // Reload user data to get updated balance and transactions
+        _loadAccountsFromLoginService();
+
+        // Afficher le SnackBar de manière sécurisée
+        Future.delayed(Duration.zero, () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Compte changé: ${account.nomCompte}'),
+                backgroundColor: AppColors.primary,
+              ),
+            );
+          }
+        });
+      } else {
+        Future.delayed(Duration.zero, () {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erreur lors du changement de compte: ${result.error}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        });
       }
-    });
+    } catch (e) {
+      Future.delayed(Duration.zero, () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erreur: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      });
+    }
   }
 
   void _handleAccountCreated(AccountModel newAccount) {
@@ -99,12 +145,25 @@ class _MenuNavigationClientSimpleState extends State<MenuNavigationClientSimple>
 
   @override
   Widget build(BuildContext context) {
+    final loginService = Provider.of<LoginService>(context);
+    final user = loginService.clientProfile;
+    final activeAccount = loginService.clientAccounts.isNotEmpty
+        ? loginService.clientAccounts.firstWhere(
+            (compte) => compte.statut.toLowerCase() == 'actif',
+            orElse: () => loginService.clientAccounts.first,
+          )
+        : null;
+
     return Drawer(
       backgroundColor: AppColors.surface(widget.isDarkMode),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          EnteteTiroirSimple(isDarkMode: widget.isDarkMode),
+          EnteteTiroirSimple(
+            isDarkMode: widget.isDarkMode,
+            user: user,
+            activeAccount: activeAccount,
+          ),
           InterrupteurThemeSimple(
             isDarkMode: widget.isDarkMode,
             onThemeChanged: widget.onThemeChanged,

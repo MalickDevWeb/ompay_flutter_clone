@@ -21,21 +21,21 @@ class EnTeteHistorique extends StatelessWidget {
             'Historique',
             style: TextStyle(
               color: isDarkMode ? Colors.white : Colors.black,
-              fontSize: 18,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
           ),
-          TextButton(
-            onPressed: () {
-              // Naviguer vers l'historique complet
-            },
-            child: Text(
-              'Voir tout',
-              style: TextStyle(
+          Semantics(
+            label: 'Rafraîchir l\'historique',
+            child: IconButton(
+              icon: Icon(
+                Icons.refresh,
                 color: const Color(0xFFFF7900),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+                size: 20,
               ),
+              onPressed: () {
+                // Rafraîchir l'historique
+              },
             ),
           ),
         ],

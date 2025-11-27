@@ -67,6 +67,12 @@ abstract class IUserService {
   Future<ApiResult<TransactionModel>> getTransaction(String transactionId);
   Future<ApiResult<TransactionModel>> makeWithdrawal(WithdrawalRequest request);
   Future<ApiResult<TransactionModel>> makeUnifiedTransaction(UnifiedTransactionRequest request);
+  Future<ApiResult<TransactionModel>> makePayment({
+    required double montant,
+    String? codeMarchand,
+    String? telephoneMarchand,
+    String? note,
+  });
   Future<ApiResult<TransactionModel>> requestBalance(BalanceRequest request);
   Future<ApiResult<BalancePurchaseResponse>> requestBalancePurchase(BalancePurchaseRequest request);
   Future<ApiResult<TransactionModel>> makeDeposit(DepositRequest request);

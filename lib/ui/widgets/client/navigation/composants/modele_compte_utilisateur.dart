@@ -3,7 +3,7 @@
 // ========================================
 
 class AccountModel {
-  final int? id;
+  final String? id;
   final String nomCompte;
   final String numeroCompte;
   bool isActive;

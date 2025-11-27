@@ -1,10 +1,10 @@
 class CompteModel {
-  final int? id;
+  final String? id;
   final String numeroCompte;
   final String? nomCompte;
   final double solde;
   final String type;
-  final int? utilisateurId;
+  final String? utilisateurId;
   final String? codeMarchand;
   final Map<String, dynamic>? links;
 
@@ -21,12 +21,12 @@ class CompteModel {
 
   factory CompteModel.fromJson(Map<String, dynamic> json) {
     return CompteModel(
-      id: json['id'] as int?,
+      id: json['id']?.toString(),
       numeroCompte: json['numero_compte']?.toString() ?? '',
       nomCompte: json['nom_compte']?.toString(),
       solde: (json['solde'] as num?)?.toDouble() ?? 0.0,
       type: json['statut']?.toString() ?? '',
-      utilisateurId: json['utilisateur_id'] as int?,
+      utilisateurId: json['utilisateur_id']?.toString(),
       codeMarchand: json['code_marchand']?.toString(),
       links: json['links'] as Map<String, dynamic>?,
     );

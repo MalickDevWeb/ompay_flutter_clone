@@ -1,5 +1,5 @@
 class TransactionModel {
-  final int? id;
+  final String? id;
   final String type;
   final double montant;
   final String? compteEmetteur;
@@ -7,6 +7,12 @@ class TransactionModel {
   final DateTime dateTransaction;
   final String statut;
   final Map<String, dynamic>? links;
+
+  // Informations supplémentaires pour l'affichage
+  final Map<String, dynamic>? compteEmetteurData;
+  final Map<String, dynamic>? compteRecepteurData;
+  final Map<String, dynamic>? utilisateurEmetteurData;
+  final Map<String, dynamic>? utilisateurRecepteurData;
 
   TransactionModel({
     this.id,
@@ -17,6 +23,10 @@ class TransactionModel {
     required this.dateTransaction,
     required this.statut,
     this.links,
+    this.compteEmetteurData,
+    this.compteRecepteurData,
+    this.utilisateurEmetteurData,
+    this.utilisateurRecepteurData,
   });
 
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
@@ -45,7 +55,7 @@ class TransactionModel {
     }
 
     return TransactionModel(
-      id: json['id'] as int?,
+      id: json['id']?.toString(),
       type: json['type']?.toString() ?? '',
       montant: montant,
       compteEmetteur: json['compte_emetteur']?.toString(),
@@ -53,6 +63,11 @@ class TransactionModel {
       dateTransaction: parsedDate ?? DateTime.now(),
       statut: json['statut']?.toString() ?? '',
       links: json['links'] as Map<String, dynamic>?,
+      // Extraire les données des relations eager loaded
+      compteEmetteurData: json['compte_emetteur_data'] as Map<String, dynamic>?,
+      compteRecepteurData: json['compte_recepteur_data'] as Map<String, dynamic>?,
+      utilisateurEmetteurData: json['utilisateur_emetteur_data'] as Map<String, dynamic>?,
+      utilisateurRecepteurData: json['utilisateur_recepteur_data'] as Map<String, dynamic>?,
     );
   }
 
@@ -65,6 +80,10 @@ class TransactionModel {
     'date_transaction': dateTransaction.toIso8601String(),
     'statut': statut,
     'links': links,
+    'compte_emetteur_data': compteEmetteurData,
+    'compte_recepteur_data': compteRecepteurData,
+    'utilisateur_emetteur_data': utilisateurEmetteurData,
+    'utilisateur_recepteur_data': utilisateurRecepteurData,
   };
 
   // Compatibility getter

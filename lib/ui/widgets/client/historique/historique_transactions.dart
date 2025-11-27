@@ -269,12 +269,57 @@ class TransactionItemWidget extends StatelessWidget {
     required this.isDarkMode,
   });
 
+  // Méthode pour déterminer l'affichage du destinataire
+  String _getRecipientDisplay() {
+    // Pour les transactions entrantes (montant positif), afficher l'émetteur
+    // Pour les transactions sortantes (montant négatif), afficher le récepteur
+    final isIncoming = transaction.montant > 0;
+
+    if (isIncoming && transaction.utilisateurEmetteurData != null) {
+      // Transaction entrante - afficher l'émetteur
+      final userData = transaction.utilisateurEmetteurData!;
+      final telephone = userData['telephone']?.toString() ?? '';
+      final nom = userData['nom']?.toString() ?? '';
+      final prenom = userData['prenom']?.toString() ?? '';
+
+      // Si c'est un marchand (type = 'marchand'), afficher code marchand + nom
+      // Sinon afficher numéro de téléphone
+      final type = userData['type']?.toString();
+      if (type == 'marchand') {
+        final codeMarchand = transaction.compteEmetteurData?['numero_compte']?.toString() ?? '';
+        return '$codeMarchand - $nom';
+      } else {
+        return telephone.isNotEmpty ? telephone : '$prenom $nom'.trim();
+      }
+    } else if (!isIncoming && transaction.utilisateurRecepteurData != null) {
+      // Transaction sortante - afficher le récepteur
+      final userData = transaction.utilisateurRecepteurData!;
+      final telephone = userData['telephone']?.toString() ?? '';
+      final nom = userData['nom']?.toString() ?? '';
+      final prenom = userData['prenom']?.toString() ?? '';
+
+      // Si c'est un marchand (type = 'marchand'), afficher code marchand + nom
+      // Sinon afficher numéro de téléphone
+      final type = userData['type']?.toString();
+      if (type == 'marchand') {
+        final codeMarchand = transaction.compteRecepteurData?['numero_compte']?.toString() ?? '';
+        return '$codeMarchand - $nom';
+      } else {
+        return telephone.isNotEmpty ? telephone : '$prenom $nom'.trim();
+      }
+    }
+
+    // Fallback vers l'ancien comportement
+    return transaction.compteRecepteur ?? transaction.compteEmetteur ?? 'N/A';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isPositive = transaction.montant > 0;
     final amount = '${isPositive ? '+' : '-'}${transaction.montant.abs().toStringAsFixed(0)} CFA';
     final date = '${transaction.dateTransaction.day.toString().padLeft(2, '0')}/${transaction.dateTransaction.month.toString().padLeft(2, '0')} ${transaction.dateTransaction.hour.toString().padLeft(2, '0')}:${transaction.dateTransaction.minute.toString().padLeft(2, '0')}';
     final icon = transaction.type.contains('Transfert') ? Icons.swap_horiz : transaction.type.contains('Retrait') ? Icons.account_balance_wallet : Icons.phone_android;
+    final recipientDisplay = _getRecipientDisplay();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -317,7 +362,7 @@ class TransactionItemWidget extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          transaction.compteRecepteur ?? transaction.compteEmetteur ?? 'N/A',
+          recipientDisplay,
           style: TextStyle(
             color: Colors.grey[600],
             fontSize: 13,

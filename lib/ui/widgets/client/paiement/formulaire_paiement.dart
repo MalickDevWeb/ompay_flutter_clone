@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../../../../services/login_service.dart';
+import '../../../../../models/requests/unified_transaction_request.dart';
 import 'onglets_paiement.dart';
 import 'champs_saisie_paiement.dart';
 import 'bouton_validation_paiement.dart';
@@ -10,7 +12,7 @@ class FormulairePaiement extends StatefulWidget {
   final ValueChanged<bool> onTabChanged;
   final TextEditingController numeroController;
   final TextEditingController montantController;
-  final VoidCallback onValidate;
+  final LoginService loginService;
 
   const FormulairePaiement({
     super.key,
@@ -19,7 +21,7 @@ class FormulairePaiement extends StatefulWidget {
     required this.onTabChanged,
     required this.numeroController,
     required this.montantController,
-    required this.onValidate,
+    required this.loginService,
   });
 
   @override
@@ -28,6 +30,76 @@ class FormulairePaiement extends StatefulWidget {
 
 class _FormulairePaiementState extends State<FormulairePaiement> {
   bool _isLoading = false;
+
+  Widget _buildTransferSummary(bool isDarkMode, double padding) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: padding, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF2A2A2A) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFFF7900).withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Récapitulatif du transfert',
+            style: TextStyle(
+              color: isDarkMode ? Colors.white : Colors.black,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Numéro:',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                widget.numeroController.text,
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Montant:',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.grey[300] : Colors.grey[700],
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                '${widget.montantController.text} CFA',
+                style: TextStyle(
+                  color: const Color(0xFFFF7900),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _handleValidation() async {
     if (widget.numeroController.text.isEmpty || widget.montantController.text.isEmpty) {
@@ -40,24 +112,97 @@ class _FormulairePaiementState extends State<FormulairePaiement> {
       return;
     }
 
+    // Validation du numéro de téléphone
+    final numero = widget.numeroController.text.trim();
+    final phoneRegex = RegExp(r'^7[0-8]\d{7}$'); // Format sénégalais: 77XXXXXXX, 78XXXXXXX, etc.
+    if (!phoneRegex.hasMatch(numero)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un numéro de téléphone valide (ex: 771234567)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validation du montant
+    final montant = double.tryParse(widget.montantController.text) ?? 0;
+    if (montant <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez saisir un montant valide'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validation spécifique pour les transferts
+    if (!widget.isPayerSelected) { // Mode transfert
+      if (montant < 5) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Le montant minimum pour un transfert est de 5 CFA'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (montant > 200000) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Le montant maximum pour un transfert est de 200 000 CFA'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isPayerSelected ? 'Paiement effectué avec succès' : 'Transfert effectué avec succès',
-          ),
-          backgroundColor: Colors.green,
-        ),
+      // Utiliser l'endpoint unifié qui détecte automatiquement le type de transaction
+      final request = UnifiedTransactionRequest(
+        montant: double.parse(widget.montantController.text),
+        telephoneRecepteur: widget.numeroController.text,
       );
 
+      final result = await widget.loginService.userService.makeUnifiedTransaction(request);
+
+      if (result.isSuccess) {
+        final message = widget.isPayerSelected ? 'Paiement effectué avec succès' : 'Transfert effectué avec succès';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Rafraîchir les données utilisateur après transaction réussie (ASYNCHRONE)
+        // Ne pas attendre pour ne pas bloquer l'interface
+        widget.loginService.refreshClientData().then((_) {
+          print('✅ Données utilisateur rafraîchies après transaction');
+        }).catchError((e) {
+          print('⚠️ Erreur lors du rafraîchissement des données: $e');
+          // Ne pas afficher d'erreur à l'utilisateur car la transaction a réussi
+        });
+      } else {
+        final errorMessage = widget.isPayerSelected ? 'Erreur de paiement: ${result.error}' : 'Erreur de transfert: ${result.error}';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return; // Don't clear fields on error
+      }
+
+      // Clear fields only on success
       widget.numeroController.clear();
       widget.montantController.clear();
+
     } catch (e) {
       if (!mounted) return;
 
@@ -80,45 +225,98 @@ class _FormulairePaiementState extends State<FormulairePaiement> {
     final isSmallScreen = screenSize.width < 600;
     final padding = isSmallScreen ? 16.0 : 20.0;
 
-    return Container(
-      margin: EdgeInsets.all(padding),
-      decoration: BoxDecoration(
-        color: widget.isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: !widget.isDarkMode
-            ? [
-                BoxShadow(
-                  color: Colors.grey.withValues(alpha: 0.2),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        children: [
-          OngletsPaiement(
-            isDarkMode: widget.isDarkMode,
-            isPayerSelected: widget.isPayerSelected,
-            onTabChanged: widget.onTabChanged,
-            padding: padding,
+    return Stack(
+      children: [
+        Container(
+          margin: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: widget.isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: !widget.isDarkMode
+                ? [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.2),
+                      spreadRadius: 2,
+                      blurRadius: 8,
+                    ),
+                  ]
+                : null,
           ),
+          child: Column(
+            children: [
+              OngletsPaiement(
+                isDarkMode: widget.isDarkMode,
+                isPayerSelected: widget.isPayerSelected,
+                onTabChanged: widget.onTabChanged,
+                padding: padding,
+              ),
 
-          ChampsSaisiePaiement(
-            isDarkMode: widget.isDarkMode,
-            isPayerSelected: widget.isPayerSelected,
-            numeroController: widget.numeroController,
-            montantController: widget.montantController,
-            padding: padding,
-          ),
+              ChampsSaisiePaiement(
+                isDarkMode: widget.isDarkMode,
+                isPayerSelected: widget.isPayerSelected,
+                numeroController: widget.numeroController,
+                montantController: widget.montantController,
+                padding: padding,
+              ),
 
-          BoutonValidationPaiement(
-            isLoading: _isLoading,
-            onPressed: _handleValidation,
-            padding: padding,
+              // Affichage du résumé pour les transferts
+              if (!widget.isPayerSelected &&
+                  widget.numeroController.text.isNotEmpty &&
+                  widget.montantController.text.isNotEmpty)
+                _buildTransferSummary(widget.isDarkMode, padding),
+
+              BoutonValidationPaiement(
+                isLoading: _isLoading,
+                onPressed: _handleValidation,
+                padding: padding,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        // Overlay de chargement pendant la transaction
+        if (_isLoading)
+          Positioned.fill(
+            child: Container(
+              margin: EdgeInsets.all(padding),
+              decoration: BoxDecoration(
+                color: widget.isDarkMode
+                    ? Colors.black.withValues(alpha: 0.7)
+                    : Colors.white.withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7900)),
+                    strokeWidth: 3,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    widget.isPayerSelected
+                        ? 'Traitement du paiement en cours...'
+                        : 'Traitement du transfert en cours...',
+                    style: TextStyle(
+                      color: widget.isDarkMode ? Colors.white : Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Veuillez patienter',
+                    style: TextStyle(
+                      color: widget.isDarkMode ? Colors.grey[300] : Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

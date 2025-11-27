@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../core/abstracts/i_user_service.dart';
 import '../models/entities/login_result.dart';
@@ -17,6 +18,13 @@ class LoginService extends ChangeNotifier {
   List<TransactionModel> _clientTransactions = [];
 
   bool _isDataLoading = false;
+
+  // Real-time sync
+  Timer? _syncTimer;
+  bool _isRealTimeSyncEnabled = false;
+  static const Duration _syncInterval = Duration(seconds: 20); // Check every 10 seconds
+  int _lastTransactionCount = 0;
+  double _lastBalance = 0.0;
 
   LoginService(this.userService, this.authService);
 
@@ -62,6 +70,10 @@ class LoginService extends ChangeNotifier {
           print('👤 Loading additional client data...');
           try {
             await _loadClientData();
+
+            // Démarrer la synchronisation en temps réel après le chargement initial
+            startRealTimeSync();
+            print('🔄 Real-time sync enabled for client');
           } catch (e, stackTrace) {
             print('❌ Unexpected error during client data loading: $e');
             print('Stack trace: $stackTrace');
@@ -83,6 +95,15 @@ class LoginService extends ChangeNotifier {
       print('❌ Login error: $e');
       return LoginResult(isSuccess: false, error: e.toString());
     }
+  }
+
+  /// Refresh client data after transactions
+  Future<void> refreshClientData() async {
+    await _loadClientData();
+
+    // Mettre à jour les références pour la synchronisation
+    _lastTransactionCount = _clientTransactions.length;
+    _lastBalance = _clientBalance;
   }
 
   /// Load client-specific data after login
@@ -198,5 +219,84 @@ class LoginService extends ChangeNotifier {
       _clientBalance = 0.0;
       _clientTransactions = [];
     }
+  }
+
+  /// Démarrer la synchronisation en temps réel
+  void startRealTimeSync() {
+    if (_isRealTimeSyncEnabled) return;
+
+    _isRealTimeSyncEnabled = true;
+    print('🔄 Real-time sync started');
+
+    // Démarrer immédiatement une vérification
+    _checkForUpdates();
+
+    // Puis vérifier périodiquement
+    _syncTimer = Timer.periodic(_syncInterval, (_) => _checkForUpdates());
+  }
+
+  /// Arrêter la synchronisation en temps réel
+  void stopRealTimeSync() {
+    _isRealTimeSyncEnabled = false;
+    _syncTimer?.cancel();
+    _syncTimer = null;
+    print('⏹️ Real-time sync stopped');
+  }
+
+  /// Vérifier les mises à jour en arrière-plan
+  Future<void> _checkForUpdates() async {
+    if (!_isRealTimeSyncEnabled) return;
+
+    try {
+      final detailsResult = await userService.getUserDetails();
+      if (detailsResult.isSuccess && detailsResult.data != null) {
+        final details = detailsResult.data!;
+        final newBalance = details.soldeCompteActif ?? 0.0;
+        final newTransactions = details.transactionsCompteActif;
+
+        // Vérifier si des changements ont eu lieu
+        bool hasChanges = false;
+
+        if (newBalance != _lastBalance) {
+          print('💰 Balance updated: $_lastBalance → $newBalance');
+          _lastBalance = newBalance;
+          _clientBalance = newBalance;
+          hasChanges = true;
+        }
+
+        if (newTransactions.length != _lastTransactionCount) {
+          print('📋 Transactions updated: $_lastTransactionCount → ${newTransactions.length}');
+          _lastTransactionCount = newTransactions.length;
+          _clientTransactions = newTransactions;
+          hasChanges = true;
+        }
+
+        // Mettre à jour les comptes aussi
+        if (details.comptes.isNotEmpty && details.comptes != _clientAccounts) {
+          _clientAccounts = details.comptes;
+          hasChanges = true;
+        }
+
+        // Notifier seulement s'il y a des changements
+        if (hasChanges) {
+          print('🔄 Data updated automatically');
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      // Silent error handling for background sync
+      print('⚠️ Background sync error: $e');
+    }
+  }
+
+  /// Forcer une vérification immédiate des mises à jour
+  Future<void> forceSyncNow() async {
+    await _checkForUpdates();
+  }
+
+  @override
+  void dispose() {
+    stopRealTimeSync();
+    super.dispose();
   }
 }
