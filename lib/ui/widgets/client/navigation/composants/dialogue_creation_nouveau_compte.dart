@@ -116,22 +116,15 @@ class _DialogueCreationNouveauCompteState extends State<DialogueCreationNouveauC
                       }
 
                       final newAccount = AccountModel(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        nom: _nomController.text,
-                        telephone: '',
-                        solde: '0',
+                        id: DateTime.now().millisecondsSinceEpoch,
+                        numeroCompte: 'CPT-${DateTime.now().millisecondsSinceEpoch}',
+                        nomCompte: _nomController.text,
                         isActive: false,
                       );
 
                       widget.onAccountCreated(newAccount);
                       Navigator.of(context).pop();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Compte créé avec succès'),
-                          backgroundColor: AppColors.primary,
-                        ),
-                      );
+                      // Le SnackBar est géré par le parent (_handleAccountCreated)
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,

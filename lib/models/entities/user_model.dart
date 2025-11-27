@@ -1,6 +1,6 @@
 // lib/models/user_model.dart
 class UserModel {
-  final int? id;
+  final String? id;
   final String? nom;
   final String? prenom;
   final String? telephone;
@@ -31,10 +31,8 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
-    return UserModel(
-      id: json['id'] is int
-          ? json['id'] as int
-          : (json['id'] != null ? int.tryParse(json['id'].toString()) : null),
+    final user = UserModel(
+      id: json['id']?.toString(),
       nom: json['nom']?.toString(),
       prenom: json['prenom']?.toString(),
       telephone: json['telephone']?.toString(),
@@ -44,6 +42,8 @@ class UserModel {
       pin: json['pin']?.toString(),
       links: json['links'] as Map<String, dynamic>?,
     );
+    print('👤 UserModel.fromJson - ID: ${user.id}, Raw ID: ${json['id']}');
+    return user;
   }
 
   Map<String, dynamic> toJson() => {

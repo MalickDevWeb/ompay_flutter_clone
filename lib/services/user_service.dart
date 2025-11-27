@@ -29,6 +29,7 @@ import '../models/requests/login_request.dart';
 import '../models/responses/login_response.dart';
 import '../models/responses/logout_response.dart';
 import '../models/responses/create_account_response.dart';
+import '../models/responses/user_details_response.dart';
 
 class UserService implements IUserService {
   final ApiClient api;
@@ -53,7 +54,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<RegisterResponse>> register(RegisterRequest request) async {
-    final result = await api.post('/register', request.toJson());
+    final result = await api.post('/api/register', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -69,7 +70,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<UserModel>> getProfile() async {
-    final result = await api.get('/user');
+    final result = await api.get('/api/user');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -81,6 +82,22 @@ class UserService implements IUserService {
     }
 
     return ApiResult.failure(result.error ?? "Failed to get user profile");
+  }
+
+  @override
+  Future<ApiResult<UserDetailsResponse>> getUserDetails() async {
+    final result = await api.get('/api/user/details');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = UserDetailsResponse.fromJson(result.data!['data']);
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON response from get user details API: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Failed to get user details");
   }
 
   @override
@@ -117,8 +134,8 @@ class UserService implements IUserService {
   }
 
  @override
- Future<ApiResult<SendOtpResponse>> sendOtp(String telephone) async {
-   final result = await api.post('/sendOTP', {"telephone": telephone});
+  Future<ApiResult<SendOtpResponse>> sendOtp(String telephone) async {
+    final result = await api.post('/api/sendOTP', {"telephone": telephone});
 
    if (result.isSuccess && result.data != null) {
      try {
@@ -135,7 +152,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<StatusModel>> getStatus() async {
-    final result = await api.get('/status');
+    final result = await api.get('/api/status');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -151,7 +168,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<LoginOtpResponse>> loginOtp(String telephone, String otpCode) async {
-    final result = await api.post('/login/otp', {"telephone": telephone, "otp_code": otpCode});
+    final result = await api.post('/api/login/otp', {"telephone": telephone, "otp_code": otpCode});
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -168,7 +185,9 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<ComptesResponse>> getMyAccounts() async {
+    print('🔍 Calling getMyAccounts API...');
     final result = await api.get('/api/comptes');
+    print('🔍 API result: ${result.isSuccess}, error: ${result.error}');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -200,7 +219,23 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<BalanceResponse>> getAccountBalance(String accountNumber) async {
-    final result = await api.get('/compte/$accountNumber/solde');
+    final result = await api.get('/api/compte/$accountNumber/solde');
+
+    if (result.isSuccess && result.data != null) {
+      try {
+        final response = BalanceResponse.fromJson(result.data!);
+        return ApiResult.success(response);
+      } catch (e) {
+        return ApiResult.failure("Invalid JSON: $e");
+      }
+    }
+
+    return ApiResult.failure(result.error ?? "Unknown error");
+  }
+
+  @override
+  Future<ApiResult<BalanceResponse>> getActiveAccountBalance() async {
+    final result = await api.get('/api/compte/solde');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -216,7 +251,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<UpdateAccountResponse>> updateAccount(String accountNumber, UpdateAccountRequest request) async {
-    final result = await api.put('/compte/$accountNumber/modifier', request.toJson());
+    final result = await api.put('/api/compte/$accountNumber/modifier', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -232,7 +267,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<SwitchAccountResponse>> switchActiveAccount(String accountNumber) async {
-    final result = await api.post('/compte/$accountNumber/switch', {});
+    final result = await api.post('/api/compte/$accountNumber/switch', {});
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -248,7 +283,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<DeleteAccountResponse>> deleteAccount(String accountNumber) async {
-    final result = await api.delete('/compte/$accountNumber/supprimer');
+    final result = await api.delete('/api/compte/$accountNumber/supprimer');
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -280,7 +315,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<RestoreAccountResponse>> restoreAccount(String accountNumber) async {
-    final result = await api.post('/compte/$accountNumber/restaurer', {});
+    final result = await api.post('/api/compte/$accountNumber/restaurer', {});
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -391,7 +426,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<TransactionModel>> requestBalance(BalanceRequest request) async {
-    final result = await api.post('/transactions/demande', request.toJson());
+    final result = await api.post('/api/transactions/demande', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {
@@ -407,7 +442,7 @@ class UserService implements IUserService {
 
   @override
   Future<ApiResult<BalancePurchaseResponse>> requestBalancePurchase(BalancePurchaseRequest request) async {
-    final result = await api.post('/transactions/demande', request.toJson());
+    final result = await api.post('/api/transactions/demande', request.toJson());
 
     if (result.isSuccess && result.data != null) {
       try {

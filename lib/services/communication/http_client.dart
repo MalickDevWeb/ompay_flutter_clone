@@ -18,14 +18,18 @@ class HttpClientImpl implements ApiClient {
   final AuthService authService;
 
   HttpClientImpl({String? baseUrl, AuthService? authService})
-      : baseUrl = baseUrl ?? EnvConfig.get('API_BASE_URL', defaultValue: "http://localhost:8000/api"),
-        authService = authService ?? AuthService();
+    : baseUrl =
+          baseUrl ??
+          EnvConfig.get(
+            'API_BASE_URL',
+            defaultValue: "http://localhost:8000/api",
+          ),
+      authService = authService ?? AuthService();
 
   Map<String, String> get _headers {
-    final headers = {
-      'Content-Type': 'application/json',
-    };
-    if (authService.accessToken != null && authService.accessToken!.isNotEmpty) {
+    final headers = {'Content-Type': 'application/json'};
+    if (authService.accessToken != null &&
+        authService.accessToken!.isNotEmpty) {
       headers['Authorization'] = 'Bearer ${authService.accessToken!}';
     }
     print('🔑 HttpClient headers: $headers');
@@ -35,7 +39,9 @@ class HttpClientImpl implements ApiClient {
   @override
   Future<ApiResult<Map<String, dynamic>>> get(String url) =>
       ApiExecutor.execute(() async {
-        final response = await http.get(Uri.parse(baseUrl + url), headers: _headers).timeout(Duration(seconds: 10));
+        final response = await http
+            .get(Uri.parse(baseUrl + url), headers: _headers)
+            .timeout(Duration(seconds: 90));
         if (response.statusCode >= 200 && response.statusCode < 300) {
           return jsonDecode(response.body);
         } else {
@@ -44,12 +50,17 @@ class HttpClientImpl implements ApiClient {
       });
 
   @override
-  Future<ApiResult<Map<String, dynamic>>> post(String url, Map<String, dynamic> body) => ApiExecutor.execute(() async {
-    final response = await http.post(
-      Uri.parse(baseUrl + url),
-      body: jsonEncode(body),
-      headers: _headers,
-    ).timeout(Duration(seconds: 10));
+  Future<ApiResult<Map<String, dynamic>>> post(
+    String url,
+    Map<String, dynamic> body,
+  ) => ApiExecutor.execute(() async {
+    final response = await http
+        .post(
+          Uri.parse(baseUrl + url),
+          body: jsonEncode(body),
+          headers: _headers,
+        )
+        .timeout(Duration(seconds: 90));
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     } else {
@@ -58,12 +69,17 @@ class HttpClientImpl implements ApiClient {
   });
 
   @override
-  Future<ApiResult<Map<String, dynamic>>> put(String url, Map<String, dynamic> body) => ApiExecutor.execute(() async {
-    final response = await http.put(
-      Uri.parse(baseUrl + url),
-      body: jsonEncode(body),
-      headers: _headers,
-    ).timeout(Duration(seconds: 10));
+  Future<ApiResult<Map<String, dynamic>>> put(
+    String url,
+    Map<String, dynamic> body,
+  ) => ApiExecutor.execute(() async {
+    final response = await http
+        .put(
+          Uri.parse(baseUrl + url),
+          body: jsonEncode(body),
+          headers: _headers,
+        )
+        .timeout(Duration(seconds: 90));
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     } else {
@@ -72,12 +88,17 @@ class HttpClientImpl implements ApiClient {
   });
 
   @override
-  Future<ApiResult<Map<String, dynamic>>> patch(String url, Map<String, dynamic> body) => ApiExecutor.execute(() async {
-    final response = await http.patch(
-      Uri.parse(baseUrl + url),
-      body: jsonEncode(body),
-      headers: _headers,
-    ).timeout(Duration(seconds: 10));
+  Future<ApiResult<Map<String, dynamic>>> patch(
+    String url,
+    Map<String, dynamic> body,
+  ) => ApiExecutor.execute(() async {
+    final response = await http
+        .patch(
+          Uri.parse(baseUrl + url),
+          body: jsonEncode(body),
+          headers: _headers,
+        )
+        .timeout(Duration(seconds: 90));
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return jsonDecode(response.body);
     } else {
@@ -88,7 +109,9 @@ class HttpClientImpl implements ApiClient {
   @override
   Future<ApiResult<Map<String, dynamic>>> delete(String url) =>
       ApiExecutor.execute(() async {
-        final response = await http.delete(Uri.parse(baseUrl + url), headers: _headers).timeout(Duration(seconds: 10));
+        final response = await http
+            .delete(Uri.parse(baseUrl + url), headers: _headers)
+            .timeout(Duration(seconds: 90));
         if (response.statusCode >= 200 && response.statusCode < 300) {
           return jsonDecode(response.body);
         } else {

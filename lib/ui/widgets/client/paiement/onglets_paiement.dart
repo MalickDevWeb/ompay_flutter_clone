@@ -33,12 +33,14 @@ class OngletsPaiement extends StatelessWidget {
                       onChanged: (value) => onTabChanged(value!),
                       activeColor: const Color(0xFFFF7900),
                     ),
-                    Text(
-                      'Payer',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontSize: 16,
-                        fontWeight: isPayerSelected ? FontWeight.bold : FontWeight.normal,
+                    Flexible(
+                      child: Text(
+                        'Payer',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontSize: 16,
+                          fontWeight: isPayerSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
                     ),
                   ],
@@ -59,12 +61,14 @@ class OngletsPaiement extends StatelessWidget {
                       onChanged: (value) => onTabChanged(value!),
                       activeColor: const Color(0xFFFF7900),
                     ),
-                    Text(
-                      'Transférer',
-                      style: TextStyle(
-                        color: isDarkMode ? Colors.white : Colors.black,
-                        fontSize: 16,
-                        fontWeight: !isPayerSelected ? FontWeight.bold : FontWeight.normal,
+                    Flexible(
+                      child: Text(
+                        'Transférer',
+                        style: TextStyle(
+                          color: isDarkMode ? Colors.white : Colors.black,
+                          fontSize: 16,
+                          fontWeight: !isPayerSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

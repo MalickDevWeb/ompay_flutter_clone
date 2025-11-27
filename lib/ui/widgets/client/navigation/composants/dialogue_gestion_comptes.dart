@@ -88,7 +88,7 @@ class AccountManagerDialog extends StatelessWidget {
                           ? const Color(0xFFFF7900)
                           : Colors.grey[300],
                       child: Text(
-                        account.nom[0].toUpperCase(),
+                        account.nomCompte[0].toUpperCase(),
                         style: TextStyle(
                           color: account.isActive ? Colors.white : Colors.grey[600],
                           fontWeight: FontWeight.bold,
@@ -96,20 +96,18 @@ class AccountManagerDialog extends StatelessWidget {
                       ),
                     ),
                     title: Text(
-                      account.nom,
+                      account.nomCompte,
                       style: TextStyle(
                         color: isDarkMode ? Colors.white : Colors.black,
                         fontWeight: account.isActive ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
-                    subtitle: account.telephone.isNotEmpty
-                        ? Text(
-                            account.telephone,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                            ),
-                          )
-                        : null,
+                    subtitle: Text(
+                      account.id?.toString() ?? account.numeroCompte,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                      ),
+                    ),
                     trailing: account.isActive
                         ? const Icon(Icons.check_circle, color: Color(0xFFFF7900))
                         : null,
@@ -130,7 +128,7 @@ class AccountManagerDialog extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    onCreateAccount();
+                    Future.delayed(Duration.zero, () => onCreateAccount());
                   },
                   icon: const Icon(Icons.add, color: Colors.white),
                   label: const Text('Créer un nouveau compte'),

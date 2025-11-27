@@ -3,10 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:test_flutter/ui/widgets/login/carrousel_images.dart';
 import 'package:test_flutter/ui/widgets/login/formulaire_connexion.dart';
-// import 'package:test_flutter/ui/widgets/login/wavy_clipper.dart';
 import 'package:test_flutter/services/login_service.dart';
 import 'package:test_flutter/core/validators/login_validator.dart';
-import 'package:test_flutter/models/entities/login_result.dart';
 import 'package:test_flutter/core/services/secure_storage_service.dart';
 
 // Widget principal de la page de connexion, stateful pour gérer le contenu dynamique
@@ -109,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
     _clearErrorsAndStartLoading();
 
     try {
-      // Call the real login service
+
       final result = await widget.loginService.loginWithOtp(phone, otpCode);
 
       if (!mounted) return;

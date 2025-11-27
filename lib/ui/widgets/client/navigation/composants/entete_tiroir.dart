@@ -3,11 +3,17 @@
 // ========================================
 
 import 'package:flutter/material.dart';
+import '../../../../../../models/entities/user_model.dart';
 
 class EnteteTiroir extends StatelessWidget {
   final bool isDarkMode;
+  final UserModel? user;
 
-  const EnteteTiroir({super.key, required this.isDarkMode});
+  const EnteteTiroir({
+    super.key,
+    required this.isDarkMode,
+    this.user,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +37,7 @@ class EnteteTiroir extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Abdoulaye Diallo',
+            user?.name ?? 'Utilisateur',
             style: TextStyle(
               color: isDarkMode ? Colors.white : Colors.black,
               fontSize: 18,
@@ -40,7 +46,7 @@ class EnteteTiroir extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '782917770',
+            user?.telephone ?? 'Chargement...',
             style: TextStyle(
               color: isDarkMode ? Colors.white70 : Colors.black87,
               fontSize: 16,

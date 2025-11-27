@@ -30,50 +30,64 @@ class _MenuNavigationClientSimpleState extends State<MenuNavigationClientSimple>
     super.initState();
     accounts = [
       AccountModel(
-        id: '1',
-        nom: 'Abdoulaye Diallo',
-        telephone: '782917770',
-        solde: '50000',
+        numeroCompte: 'CPT-5556', // nom du compte pas le account holder
+        nomCompte: 'Compte Epargne', // numéro compte pas le phone number
         isActive: true,
       ),
       AccountModel(
-        id: '2',
-        nom: 'Djeuli ODC',
-        telephone: '786284027',
-        solde: '120000',
+        numeroCompte: 'CPT-5557',
+        nomCompte: 'Compte Courant',
         isActive: false,
       ),
     ];
   }
 
   void _handleAccountSelected(AccountModel account) {
+    if (!mounted) return;
+
     setState(() {
       for (var acc in accounts) {
         acc.isActive = false;
       }
       account.isActive = true;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Compte changé: ${account.nom}'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+
+    // Afficher le SnackBar de manière sécurisée
+    Future.delayed(Duration.zero, () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Compte changé: ${account.nomCompte}'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    });
   }
 
   void _handleAccountCreated(AccountModel newAccount) {
+    if (!mounted) return;
+
     setState(() {
       accounts.add(newAccount);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Compte créé avec succès'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+
+    // Afficher le SnackBar de manière sécurisée
+    Future.delayed(Duration.zero, () {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Compte créé avec succès'),
+            backgroundColor: AppColors.primary,
+          ),
+        );
+      }
+    });
   }
 
   void _showCreateAccountDialog() {
+    if (!mounted) return;
+
     showDialog(
       context: context,
       builder: (context) => DialogueCreationNouveauCompte(

@@ -45,10 +45,14 @@ class AuthService {
   Future<String?> get authorizationHeader async {
     final tokenType = await getTokenTypeAsync();
     final accessToken = await getAccessTokenAsync();
+    print('🔑 Token type: $tokenType, Access token: ${accessToken != null ? 'present' : 'null'}');
 
     if (tokenType != null && accessToken != null) {
-      return '$tokenType $accessToken';
+      final header = '$tokenType $accessToken';
+      print('🔑 Authorization header: $header');
+      return header;
     }
+    print('🔑 No authorization header available');
     return null;
   }
 
@@ -72,14 +76,19 @@ class AuthService {
     _accessToken = response.accessToken;
     _tokenType = response.tokenType ?? 'Bearer';
 
-    // Store in secure storage
-    if (response.user != null && response.accessToken != null) {
+    print('🔐 AuthService.login - User ID: ${response.user?.id}, AccessToken present: ${response.accessToken != null}');
+
+    // Store in secure storage - allow even if user ID is null for now
+    if (response.accessToken != null) {
       await SecureStorageService.storeAuthTokens(
         accessToken: response.accessToken!,
         tokenType: _tokenType!,
-        userId: response.user!.id?.toString() ?? '',
-        userType: response.user!.type ?? 'client',
+        userId: response.user?.id?.toString() ?? 'unknown',
+        userType: response.user?.type ?? 'client',
       );
+      print('✅ Auth tokens stored successfully');
+    } else {
+      print('❌ Cannot store auth tokens: access token is null');
     }
   }
 

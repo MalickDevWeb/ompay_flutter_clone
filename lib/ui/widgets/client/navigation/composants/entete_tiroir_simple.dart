@@ -4,11 +4,20 @@
 
 import 'package:flutter/material.dart';
 import '../../../../theme/app_colors.dart';
+import '../../../../../../models/entities/compte_model.dart';
+import '../../../../../../models/entities/user_model.dart';
 
 class EnteteTiroirSimple extends StatelessWidget {
   final bool isDarkMode;
+  final UserModel? user;
+  final CompteModel? activeAccount;
 
-  const EnteteTiroirSimple({super.key, required this.isDarkMode});
+  const EnteteTiroirSimple({
+    super.key,
+    required this.isDarkMode,
+    this.user,
+    this.activeAccount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +49,7 @@ class EnteteTiroirSimple extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Abdoulaye Diallo',
+                      user?.name ?? 'Utilisateur',//Nom du compte active
                       style: TextStyle(
                         color: AppColors.textPrimary(isDarkMode),
                         fontSize: 16,
@@ -50,7 +59,7 @@ class EnteteTiroirSimple extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '782917770',
+                      activeAccount?.numeroCompte ?? 'Chargement...',//Numéro du compte active
                       style: TextStyle(
                         color: AppColors.textSecondary(isDarkMode),
                         fontSize: 14,

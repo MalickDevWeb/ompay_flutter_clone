@@ -38,17 +38,13 @@ class _ClientDrawerState extends State<ClientDrawer> {
     super.initState();
     accounts = [
       AccountModel(
-        id: '1',
-        nom: 'Abdoulaye Diallo',
-        telephone: '782917770',
-        solde: '50000',
+        numeroCompte: 'CPT-5556', // nom du compte pas le account holder
+        nomCompte: 'Compte Epargne', // numéro compte pas le phone number
         isActive: true,
       ),
-      AccountModel(
-        id: '2',
-        nom: 'Djeuli ODC',
-        telephone: '786284027',
-        solde: '120000',
+     AccountModel(
+        numeroCompte: 'CPT-5557',
+        nomCompte: 'Compte Courant',
         isActive: false,
       ),
     ];
@@ -63,7 +59,7 @@ class _ClientDrawerState extends State<ClientDrawer> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Compte changé: ${account.nom}'),
+        content: Text('Compte changé: ${account.nomCompte}'),
         backgroundColor: const Color(0xFFFF7900),
       ),
     );

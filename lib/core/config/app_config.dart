@@ -14,7 +14,7 @@ class AppConfig {
     // Fallback to compile-time environment variable
     const compileTimeUrl = String.fromEnvironment(
       'API_BASE_URL',
-      defaultValue: 'http://localhost:8000/api'
+      defaultValue: 'http://localhost:8000'
     );
 
     return compileTimeUrl;

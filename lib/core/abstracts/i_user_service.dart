@@ -17,6 +17,7 @@ import '../../models/requests/admin_virtual_purchase_request.dart';
 import '../../models/requests/balance_request.dart';
 import '../../models/requests/balance_purchase_request.dart';
 import '../../models/responses/balance_purchase_response.dart';
+import '../../models/responses/user_details_response.dart';
 import '../../models/requests/client_deposit_request.dart';
 import '../../models/requests/deposit_request.dart';
 import '../../models/requests/withdrawal_confirmation_request.dart';
@@ -36,6 +37,7 @@ abstract class IUserService {
   // User registration and profile management
   Future<ApiResult<RegisterResponse>> register(RegisterRequest request);
   Future<ApiResult<UserModel>> getProfile();
+  Future<ApiResult<UserDetailsResponse>> getUserDetails();
   Future<ApiResult<StatusModel>> updateProfile(UserModel user);
   Future<ApiResult<LoginResponse>> login(LoginRequest request);
   Future<ApiResult<LogoutResponse>> logout();
@@ -43,6 +45,7 @@ abstract class IUserService {
   Future<ApiResult<ComptesResponse>> getMyAccounts();
   Future<ApiResult<CreateAccountResponse>> createAccount(CreateAccountRequest request);
   Future<ApiResult<BalanceResponse>> getAccountBalance(String accountNumber);
+  Future<ApiResult<BalanceResponse>> getActiveAccountBalance();
   Future<ApiResult<UpdateAccountResponse>> updateAccount(String accountNumber, UpdateAccountRequest request);
   Future<ApiResult<SwitchAccountResponse>> switchActiveAccount(String accountNumber);
   Future<ApiResult<DeleteAccountResponse>> deleteAccount(String accountNumber);

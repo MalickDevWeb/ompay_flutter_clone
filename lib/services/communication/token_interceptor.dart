@@ -13,6 +13,9 @@ class TokenInterceptor extends Interceptor {
       final authHeader = await tokenProvider?.call();
       if (authHeader != null && authHeader.isNotEmpty) {
         options.headers['Authorization'] = authHeader;
+        print('🔑 Auth header set: $authHeader');
+      } else {
+        print('🔑 No auth header available');
       }
     } catch (e) {
       // If token retrieval fails, continue without authorization

@@ -18,8 +18,17 @@ class ApiExecutor {
       if (message != null) return message.toString();
     }
 
-    // If data is a String, use it directly
+    // If data is a String, check if it's HTML or a proper error message
     if (data is String && data.isNotEmpty) {
+      // Detect HTML responses (common with server errors)
+      if (data.trim().startsWith('<!DOCTYPE') || data.trim().startsWith('<html')) {
+        return 'Erreur serveur interne - réponse HTML inattendue';
+      }
+      // Check for common HTML tags
+      if (data.contains('<html') || data.contains('<body') || data.contains('<head')) {
+        return 'Erreur serveur - page d\'erreur HTML reçue';
+      }
+      // Use the string directly if it looks like a proper message
       return data;
     }
 

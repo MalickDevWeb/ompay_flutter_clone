@@ -12,9 +12,9 @@ class LoginService extends ChangeNotifier {
 
   // Client data storage
   UserModel? _clientProfile;
-  List<CompteModel>? _clientAccounts;
-  double? _clientBalance;
-  List<TransactionModel>? _clientTransactions;
+  List<CompteModel> _clientAccounts = [];
+  double _clientBalance = 0.0;
+  List<TransactionModel> _clientTransactions = [];
 
   bool _isDataLoading = false;
 
@@ -22,9 +22,9 @@ class LoginService extends ChangeNotifier {
 
   // Getters for client data
   UserModel? get clientProfile => _clientProfile;
-  List<CompteModel>? get clientAccounts => _clientAccounts;
-  double? get clientBalance => _clientBalance;
-  List<TransactionModel>? get clientTransactions => _clientTransactions;
+  List<CompteModel> get clientAccounts => _clientAccounts;
+  double get clientBalance => _clientBalance;
+  List<TransactionModel> get clientTransactions => _clientTransactions;
   bool get isDataLoading => _isDataLoading;
 
   /// Envoi OTP
@@ -53,14 +53,25 @@ class LoginService extends ChangeNotifier {
         // Store basic user info from login response
         _clientProfile = result.data!.user;
 
-        // Load additional client data if user is a client
-        if (result.data!.user?.type?.toLowerCase() == 'client') {
-          print('👤 Client user detected, user ID: ${result.data!.user?.id}');
+        // Load additional client data if user is a client or type is null (defaults to client)
+        if (result.data!.user?.type == null || result.data!.user?.type?.toLowerCase() == 'client') {
+          print('👤 Client user detected (type: ${result.data!.user?.type}), user ID: ${result.data!.user?.id}');
           if (result.data!.user?.id == null) {
             print('⚠️  Warning: User ID is null, proceeding with data loading but errors may occur');
           }
           print('👤 Loading additional client data...');
-          await _loadClientData();
+          try {
+            await _loadClientData();
+          } catch (e, stackTrace) {
+            print('❌ Unexpected error during client data loading: $e');
+            print('Stack trace: $stackTrace');
+            // Ensure data is in a safe state
+            _clientAccounts = [];
+            _clientBalance = 0.0;
+            _clientTransactions = [];
+            _isDataLoading = false;
+            notifyListeners();
+          }
         }
 
         return LoginResult(isSuccess: true, user: result.data!.user);
@@ -79,11 +90,60 @@ class LoginService extends ChangeNotifier {
     _isDataLoading = true;
     notifyListeners();
     try {
+      print('📊 Loading user details...');
+      final detailsResult = await userService.getUserDetails();
+      print('📊 Details API Result: isSuccess=${detailsResult.isSuccess}, error=${detailsResult.error}');
+      if (detailsResult.isSuccess && detailsResult.data != null) {
+        final details = detailsResult.data!;
+        print('✅ User details loaded: ${details.nom} ${details.prenom}');
+
+        // Store profile data
+        _clientProfile = UserModel(
+          id: null, // We don't have this from the details endpoint
+          nom: details.nom,
+          prenom: details.prenom,
+          telephone: details.numero,
+          email: null, // Not included in details
+          type: null, // Not included in details
+        );
+
+        // Store accounts
+        _clientAccounts = details.comptes;
+        print('✅ Accounts loaded: ${details.comptes.length} accounts');
+
+        // Store balance of active account
+        _clientBalance = details.soldeCompteActif ?? 0.0;
+        print('✅ Balance loaded: $_clientBalance');
+
+        // Store transactions of active account
+        _clientTransactions = details.transactionsCompteActif;
+        print('✅ Transactions loaded: ${details.transactionsCompteActif.length} transactions');
+      } else {
+        print('❌ Failed to load user details: ${detailsResult.error}');
+        print('🔄 Falling back to separate API calls...');
+        // Fallback to old method if new endpoint fails
+        await _loadClientDataFallback();
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading client data: $e');
+      print('Stack trace: $stackTrace');
+      // Fallback to old method
+      await _loadClientDataFallback();
+    } finally {
+      _isDataLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Fallback method to load client data using separate API calls
+  Future<void> _loadClientDataFallback() async {
+    try {
+      print('🔄 Falling back to separate API calls...');
+
       print('📊 Loading client profile...');
       final profileResult = await userService.getProfile();
       if (profileResult.isSuccess && profileResult.data != null) {
         print('✅ Profile loaded: ${profileResult.data!.nom} ${profileResult.data!.prenom}');
-        // Store profile data for client page
         _clientProfile = profileResult.data;
       } else {
         print('❌ Failed to load profile: ${profileResult.error}');
@@ -97,7 +157,7 @@ class LoginService extends ChangeNotifier {
 
         // Load balance for the first/active account
         final activeAccount = accountsResult.data!.data.comptes.firstWhere(
-          (account) => account.statut.toLowerCase() == 'actif', // Assuming 'actif' means active
+          (account) => account.statut.toLowerCase() == 'actif',
           orElse: () => accountsResult.data!.data.comptes.first,
         );
 
@@ -120,9 +180,7 @@ class LoginService extends ChangeNotifier {
         }
       } else {
         print('❌ Failed to load accounts: ${accountsResult.error}');
-        // Set default balance since accounts failed
         _clientBalance = 0.0;
-        // Try to load transactions anyway, in case they don't depend on accounts
         print('📋 Attempting to load transactions despite accounts failure...');
         final transactionsResult = await userService.getTransactions(perPage: 20);
         if (transactionsResult.isSuccess && transactionsResult.data != null) {
@@ -130,15 +188,15 @@ class LoginService extends ChangeNotifier {
           _clientTransactions = transactionsResult.data!.data.data;
         } else {
           print('❌ Failed to load transactions: ${transactionsResult.error}');
-          _clientTransactions = []; // Ensure it's not null
+          _clientTransactions = [];
         }
       }
     } catch (e, stackTrace) {
-      print('❌ Error loading client data: $e');
+      print('❌ Error in fallback loading: $e');
       print('Stack trace: $stackTrace');
-    } finally {
-      _isDataLoading = false;
-      notifyListeners();
+      _clientAccounts = [];
+      _clientBalance = 0.0;
+      _clientTransactions = [];
     }
   }
 }

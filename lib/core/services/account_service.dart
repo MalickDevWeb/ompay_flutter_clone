@@ -137,8 +137,8 @@ class AccountService {
 
   /// Get account display name
   static String getAccountDisplayName(CompteModel account) {
-    if (account.nomCompte.isNotEmpty) {
-      return account.nomCompte;
+    if (account.nomCompte != null && account.nomCompte!.isNotEmpty) {
+      return account.nomCompte!;
     }
     return 'Compte ${account.numeroCompte}';
   }

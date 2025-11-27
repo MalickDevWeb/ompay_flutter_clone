@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../models/entities/transaction_model.dart';
+import '../../models/entities/user_model.dart';
+import '../../services/login_service.dart';
 
 // ========================================
 // PAGE D'ACCUEIL AVEC AUDIT FRONTEND COMPLET
@@ -21,8 +25,8 @@ class _HomePageState extends State<HomePage> {
   bool _isDarkMode = true;
   bool _isLoading = false;
 
-  // Données fictives pour l'historique
-  final List<Map<String, dynamic>> _transactions = [
+  // Données fictives pour l'historique (remplacées par données dynamiques)
+  final List<Map<String, dynamic>> _mockTransactions = [
     {
       'type': 'Transfert d\'argent',
       'subtitle': 'Djeuli ODC',
@@ -50,10 +54,31 @@ class _HomePageState extends State<HomePage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Data is already loaded by LoginService during authentication
+    // No need to load data again here
+  }
+
+  @override
   void dispose() {
     _numeroController.dispose();
     _montantController.dispose();
     super.dispose();
+  }
+
+  Map<String, dynamic> _transactionToMap(dynamic transaction) {
+    if (transaction is TransactionModel) {
+      return {
+        'type': transaction.type,
+        'subtitle': transaction.compteRecepteur ?? transaction.compteEmetteur ?? 'N/A',
+        'amount': '${transaction.montant > 0 ? '+' : '-'}${transaction.montant.abs().toStringAsFixed(0)} CFA',
+        'date': '${transaction.dateTransaction.day.toString().padLeft(2, '0')}/${transaction.dateTransaction.month.toString().padLeft(2, '0')} ${transaction.dateTransaction.hour.toString().padLeft(2, '0')}:${transaction.dateTransaction.minute.toString().padLeft(2, '0')}',
+        'icon': transaction.type.contains('Transfert') ? Icons.swap_horiz : transaction.type.contains('Retrait') ? Icons.account_balance_wallet : Icons.phone_android,
+        'isPositive': transaction.montant > 0,
+      };
+    }
+    return transaction as Map<String, dynamic>;
   }
 
   Future<void> _handleValidation() async {
@@ -103,16 +128,278 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  Widget _buildEmptyHistory() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(
+        color: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              const Icon(
+                Icons.cloud_outlined,
+                size: 80,
+                color: Colors.grey,
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFF7900),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ),
+              const Positioned(
+                bottom: 10,
+                right: 10,
+                child: Icon(
+                  Icons.search,
+                  size: 40,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            "Vous n'avez pas encore de transaction Orange Money.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionsList(List<TransactionModel> transactions) {
+    final displayTransactions = transactions.isNotEmpty
+        ? transactions
+        : _mockTransactions;
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: displayTransactions.length,
+      itemBuilder: (context, index) {
+        final transaction = displayTransactions[index];
+        final transactionMap = _transactionToMap(transaction);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: !_isDarkMode
+                ? [
+                    BoxShadow(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      spreadRadius: 1,
+                      blurRadius: 4,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            leading: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                transactionMap['icon'],
+                color: Colors.grey[700],
+                size: 24,
+              ),
+            ),
+            title: Text(
+              transactionMap['type'],
+              style: TextStyle(
+                color: _isDarkMode ? Colors.white : Colors.black,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Text(
+              transactionMap['subtitle'],
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 13,
+              ),
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  transactionMap['amount'],
+                  style: TextStyle(
+                    color: transactionMap['isPositive']
+                        ? Colors.green
+                        : Colors.red,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  transactionMap['date'],
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDrawer(UserModel? user) {
+    return Drawer(
+      backgroundColor: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: _isDarkMode ? const Color(0xFF0A0A0A) : Colors.grey[200],
+            ),
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    const CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.network(
+                          'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=OM_PAY_ABDOULAYE',
+                          width: 30,
+                          height: 30,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  user?.nom ?? 'Utilisateur',
+                  style: TextStyle(
+                    color: _isDarkMode ? Colors.white : Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  user?.telephone ?? 'Chargement...',
+                  style: TextStyle(
+                    color: _isDarkMode ? Colors.white70 : Colors.black87,
+                    fontSize: 16,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SwitchListTile(
+            title: Text(
+              'Sombre',
+              style: TextStyle(
+                color: _isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            value: _isDarkMode,
+            onChanged: (value) {
+              setState(() {
+                _isDarkMode = value;
+              });
+            },
+            secondary: const Icon(Icons.brightness_6, color: Color(0xFFFF7900)),
+            activeColor: const Color(0xFFFF7900),
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.power_settings_new, color: Color(0xFFFF7900)),
+            title: Text(
+              'Se déconnecter',
+              style: TextStyle(
+                color: _isDarkMode ? Colors.white : Colors.black,
+              ),
+            ),
+            onTap: () {
+              // Déconnexion
+              Navigator.pop(context);
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'OMPAY Version - 1.1.0(35)',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: const Color(0xFFFF7900),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
     final isSmallScreen = screenSize.width < 600;
     final padding = isSmallScreen ? 16.0 : 20.0;
 
-    return Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: _isDarkMode ? const Color(0xFF0A0A0A) : Colors.grey[100],
-      drawer: _buildDrawer(),
+    return Consumer<LoginService>(
+      builder: (context, loginService, child) {
+        final user = loginService.clientProfile;
+        final balance = loginService.clientBalance.toStringAsFixed(0);
+        final transactions = loginService.clientTransactions;
+
+        return Scaffold(
+          key: _scaffoldKey,
+          backgroundColor: _isDarkMode ? const Color(0xFF0A0A0A) : Colors.grey[100],
+          drawer: _buildDrawer(user),
       body: CustomScrollView(
         slivers: [
           // AppBar avec header responsive
@@ -162,7 +449,7 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                     ),
                                     TextSpan(
-                                      text: 'Abdoulaye',
+                                      text: user?.prenom ?? 'Utilisateur',
                                       style: TextStyle(
                                         color: _isDarkMode ? const Color(0xFFFF7900) : Colors.black87,
                                         fontSize: 22,
@@ -176,7 +463,7 @@ class _HomePageState extends State<HomePage> {
                               Row(
                                 children: [
                                   Text(
-                                    _isSoldeVisible ? '0' : '*******',
+                                    _isSoldeVisible ? balance : '*******',
                                     style: TextStyle(
                                       color: _isDarkMode ? const Color(0xFFFF7900) : Colors.black87,
                                       fontSize: 24,
@@ -627,9 +914,9 @@ class _HomePageState extends State<HomePage> {
                 ),
 
                 // Liste des transactions
-                _transactions.isEmpty
+                (transactions.isEmpty && _mockTransactions.isEmpty)
                     ? _buildEmptyHistory()
-                    : _buildTransactionsList(),
+                    : _buildTransactionsList(transactions),
 
                 const SizedBox(height: 20),
               ],
@@ -638,256 +925,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-  }
-
-  Widget _buildEmptyHistory() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(40),
-      decoration: BoxDecoration(
-        color: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              const Icon(
-                Icons.cloud_outlined,
-                size: 80,
-                color: Colors.grey,
-              ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFF7900),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: 14,
-                  ),
-                ),
-              ),
-              const Positioned(
-                bottom: 10,
-                right: 10,
-                child: Icon(
-                  Icons.search,
-                  size: 40,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            "Vous n'avez pas encore de transaction Orange Money.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionsList() {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _transactions.length,
-      itemBuilder: (context, index) {
-        final transaction = _transactions[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: !_isDarkMode
-                ? [
-                    BoxShadow(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      spreadRadius: 1,
-                      blurRadius: 4,
-                    ),
-                  ]
-                : null,
-          ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 8,
-            ),
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                transaction['icon'],
-                color: Colors.grey[700],
-                size: 24,
-              ),
-            ),
-            title: Text(
-              transaction['type'],
-              style: TextStyle(
-                color: _isDarkMode ? Colors.white : Colors.black,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            subtitle: Text(
-              transaction['subtitle'],
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 13,
-              ),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  transaction['amount'],
-                  style: TextStyle(
-                    color: transaction['isPositive']
-                        ? Colors.green
-                        : Colors.red,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  transaction['date'],
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
       },
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      backgroundColor: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: _isDarkMode ? const Color(0xFF0A0A0A) : Colors.grey[200],
-            ),
-            child: Column(
-              children: [
-                Stack(
-                  children: [
-                    const CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.person,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: _isDarkMode ? const Color(0xFF1C1C1C) : Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.network(
-                          'https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=OM_PAY_ABDOULAYE',
-                          width: 30,
-                          height: 30,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Abdoulaye Diallo',
-                  style: TextStyle(
-                    color: _isDarkMode ? Colors.white : Colors.black,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '782917770',
-                  style: TextStyle(
-                    color: _isDarkMode ? Colors.white70 : Colors.black87,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SwitchListTile(
-            title: Text(
-              'Sombre',
-              style: TextStyle(
-                color: _isDarkMode ? Colors.white : Colors.black,
-              ),
-            ),
-            value: _isDarkMode,
-            onChanged: (value) {
-              setState(() {
-                _isDarkMode = value;
-              });
-            },
-            secondary: const Icon(Icons.brightness_6, color: Color(0xFFFF7900)),
-            activeColor: const Color(0xFFFF7900),
-          ),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.power_settings_new, color: Color(0xFFFF7900)),
-            title: Text(
-              'Se déconnecter',
-              style: TextStyle(
-                color: _isDarkMode ? Colors.white : Colors.black,
-              ),
-            ),
-            onTap: () {
-              // Déconnexion
-              Navigator.pop(context);
-            },
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'OMPAY Version - 1.1.0(35)',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: const Color(0xFFFF7900),
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

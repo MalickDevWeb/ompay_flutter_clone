@@ -1,6 +1,7 @@
 class CompteModel {
   final int? id;
   final String numeroCompte;
+  final String? nomCompte;
   final double solde;
   final String type;
   final int? utilisateurId;
@@ -10,6 +11,7 @@ class CompteModel {
   CompteModel({
     this.id,
     required this.numeroCompte,
+    this.nomCompte,
     required this.solde,
     required this.type,
     this.utilisateurId,
@@ -20,9 +22,10 @@ class CompteModel {
   factory CompteModel.fromJson(Map<String, dynamic> json) {
     return CompteModel(
       id: json['id'] as int?,
-      numeroCompte: json['numeroCompte']?.toString() ?? '',
+      numeroCompte: json['numero_compte']?.toString() ?? '',
+      nomCompte: json['nom_compte']?.toString(),
       solde: (json['solde'] as num?)?.toDouble() ?? 0.0,
-      type: json['type']?.toString() ?? '',
+      type: json['statut']?.toString() ?? '',
       utilisateurId: json['utilisateur_id'] as int?,
       codeMarchand: json['code_marchand']?.toString(),
       links: json['links'] as Map<String, dynamic>?,
@@ -31,9 +34,10 @@ class CompteModel {
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'numeroCompte': numeroCompte,
+    'numero_compte': numeroCompte,
+    'nom_compte': nomCompte,
     'solde': solde,
-    'type': type,
+    'statut': type,
     'utilisateur_id': utilisateurId,
     'code_marchand': codeMarchand,
     'links': links,
@@ -41,7 +45,6 @@ class CompteModel {
 
   // Compatibility getters
   String get statut => type;
-  String get nomCompte => numeroCompte;
   String get titulaire => utilisateurId?.toString() ?? '';
 
   @override
