@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../models/entities/transaction_model.dart';
 import 'section_max_it.dart';
 import 'en_tete_historique.dart';
 import 'historique_vide.dart';
@@ -6,7 +7,7 @@ import 'liste_transactions.dart';
 
 class HistoriqueTransactions extends StatelessWidget {
   final bool isDarkMode;
-  final List<Map<String, dynamic>> transactions;
+  final List<TransactionModel> transactions;
 
   const HistoriqueTransactions({
     super.key,
@@ -230,7 +231,7 @@ class EmptyHistoryWidget extends StatelessWidget {
 
 class TransactionListWidget extends StatelessWidget {
   final bool isDarkMode;
-  final List<Map<String, dynamic>> transactions;
+  final List<TransactionModel> transactions;
   final double padding;
 
   const TransactionListWidget({
@@ -259,7 +260,7 @@ class TransactionListWidget extends StatelessWidget {
 }
 
 class TransactionItemWidget extends StatelessWidget {
-  final Map<String, dynamic> transaction;
+  final TransactionModel transaction;
   final bool isDarkMode;
 
   const TransactionItemWidget({
@@ -270,6 +271,11 @@ class TransactionItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPositive = transaction.montant > 0;
+    final amount = '${isPositive ? '+' : '-'}${transaction.montant.abs().toStringAsFixed(0)} CFA';
+    final date = '${transaction.dateTransaction.day.toString().padLeft(2, '0')}/${transaction.dateTransaction.month.toString().padLeft(2, '0')} ${transaction.dateTransaction.hour.toString().padLeft(2, '0')}:${transaction.dateTransaction.minute.toString().padLeft(2, '0')}';
+    final icon = transaction.type.contains('Transfert') ? Icons.swap_horiz : transaction.type.contains('Retrait') ? Icons.account_balance_wallet : Icons.phone_android;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -297,13 +303,13 @@ class TransactionItemWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
-            transaction['icon'],
+            icon,
             color: Colors.grey[700],
             size: 24,
           ),
         ),
         title: Text(
-          transaction['type'],
+          transaction.type,
           style: TextStyle(
             color: isDarkMode ? Colors.white : Colors.black,
             fontSize: 15,
@@ -311,7 +317,7 @@ class TransactionItemWidget extends StatelessWidget {
           ),
         ),
         subtitle: Text(
-          transaction['subtitle'],
+          transaction.compteRecepteur ?? transaction.compteEmetteur ?? 'N/A',
           style: TextStyle(
             color: Colors.grey[600],
             fontSize: 13,
@@ -322,18 +328,16 @@ class TransactionItemWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              transaction['amount'],
+              amount,
               style: TextStyle(
-                color: transaction['isPositive']
-                    ? Colors.green
-                    : Colors.red,
+                color: isPositive ? Colors.green : Colors.red,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              transaction['date'],
+              date,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontSize: 12,

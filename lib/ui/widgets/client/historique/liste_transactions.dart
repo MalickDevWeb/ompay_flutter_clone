@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../models/entities/transaction_model.dart';
 import 'element_transaction.dart';
 
 class ListeTransactions extends StatelessWidget {
   final bool isDarkMode;
-  final List<Map<String, dynamic>> transactions;
+  final List<TransactionModel> transactions;
   final double padding;
 
   const ListeTransactions({

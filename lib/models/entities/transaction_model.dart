@@ -31,10 +31,23 @@ class TransactionModel {
       parsedDate = DateTime.now();
     }
 
+    // Handle montant parsing - can be num or string (e.g., "+50000.00")
+    double montant = 0.0;
+    final montantValue = json['montant'];
+    if (montantValue != null) {
+      if (montantValue is num) {
+        montant = montantValue.toDouble();
+      } else if (montantValue is String) {
+        // Remove any non-numeric characters except decimal point and minus sign
+        final cleanedString = montantValue.replaceAll(RegExp(r'[^\d.-]'), '');
+        montant = double.tryParse(cleanedString) ?? 0.0;
+      }
+    }
+
     return TransactionModel(
       id: json['id'] as int?,
       type: json['type']?.toString() ?? '',
-      montant: (json['montant'] as num?)?.toDouble() ?? 0.0,
+      montant: montant,
       compteEmetteur: json['compte_emetteur']?.toString(),
       compteRecepteur: json['compte_recepteur']?.toString(),
       dateTransaction: parsedDate ?? DateTime.now(),

@@ -5,6 +5,7 @@ import '../widgets/client/historique/historique_transactions.dart';
 import '../widgets/client/navigation/menu_navigation_client_simple.dart';
 import '../theme/app_colors.dart';
 import '../../services/login_service.dart';
+import '../../models/entities/transaction_model.dart';
 import 'package:provider/provider.dart';
 
 class ClientPageWithQR extends StatefulWidget {
@@ -33,42 +34,7 @@ class _ClientPageWithQRState extends State<ClientPageWithQR> {
 
   // No need for _loadClientData, data is loaded in LoginService
 
-  List<Map<String, dynamic>> get _transactions {
-    final transactions = _loginService.clientTransactions;
-    if (transactions == null || transactions.isEmpty) {
-      return [];
-    }
-
-    return transactions.map((transaction) {
-      return {
-        'type': transaction.type.isNotEmpty ? transaction.type : 'Transaction',
-        'subtitle': transaction.reference.isNotEmpty ? transaction.reference : 'N/A',
-        'amount': '${transaction.montant > 0 ? '+' : ''}${transaction.montant} CFA',
-        'date': _formatDate(transaction.dateTransaction),
-        'icon': _getTransactionIcon(transaction.type),
-        'isPositive': transaction.montant > 0,
-      };
-    }).toList();
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return '';
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-  }
-
-  IconData _getTransactionIcon(String? type) {
-    if (type == null) return Icons.swap_horiz;
-
-    final lowerType = type.toLowerCase();
-    if (lowerType.contains('depot') || lowerType.contains('deposit')) {
-      return Icons.account_balance_wallet;
-    } else if (lowerType.contains('retrait') || lowerType.contains('withdrawal')) {
-      return Icons.account_balance_wallet;
-    } else if (lowerType.contains('transfert') || lowerType.contains('transfer')) {
-      return Icons.phone_android;
-    }
-    return Icons.swap_horiz;
-  }
+  List<TransactionModel> get _transactions => _loginService.clientTransactions;
 
   @override
   void dispose() {

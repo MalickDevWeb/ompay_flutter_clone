@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../models/entities/transaction_model.dart';
 
 class ElementTransaction extends StatelessWidget {
-  final Map<String, dynamic> transaction;
+  final TransactionModel transaction;
   final bool isDarkMode;
   final double padding;
 
@@ -14,6 +15,11 @@ class ElementTransaction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isPositive = transaction.montant > 0;
+    final amount = '${isPositive ? '+' : '-'}${transaction.montant.abs().toStringAsFixed(0)} CFA';
+    final date = '${transaction.dateTransaction.day.toString().padLeft(2, '0')}/${transaction.dateTransaction.month.toString().padLeft(2, '0')} ${transaction.dateTransaction.hour.toString().padLeft(2, '0')}:${transaction.dateTransaction.minute.toString().padLeft(2, '0')}';
+    final icon = transaction.type.contains('Transfert') ? Icons.swap_horiz : transaction.type.contains('Retrait') ? Icons.account_balance_wallet : Icons.phone_android;
+
     return Container(
       margin: EdgeInsets.only(bottom: 8, left: padding, right: padding),
       padding: const EdgeInsets.all(16),
@@ -39,7 +45,7 @@ class ElementTransaction extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              transaction['icon'] as IconData,
+              icon,
               color: const Color(0xFFFF7900),
             ),
           ),
@@ -49,14 +55,14 @@ class ElementTransaction extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  transaction['type'] as String,
+                  transaction.type,
                   style: TextStyle(
                     color: isDarkMode ? Colors.white : Colors.black,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 Text(
-                  transaction['subtitle'] as String,
+                  transaction.compteRecepteur ?? transaction.compteEmetteur ?? 'N/A',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontSize: 13,
@@ -69,16 +75,14 @@ class ElementTransaction extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                transaction['amount'] as String,
+                amount,
                 style: TextStyle(
-                  color: transaction['isPositive'] as bool
-                      ? Colors.green
-                      : Colors.red,
+                  color: isPositive ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
-                transaction['date'] as String,
+                date,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 12,
